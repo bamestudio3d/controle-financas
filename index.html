@@ -3305,5 +3305,37 @@ if ('serviceWorker' in navigator) {
     }
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
+
+<script>
+async function hashSenha(senha) {
+  const enc = new TextEncoder().encode(senha);
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Backup
+function exportarBackup() {
+  const data = JSON.stringify(localStorage);
+  const blob = new Blob([data], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup-financas.json";
+  a.click();
+}
+
+function importarBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = JSON.parse(e.target.result);
+    localStorage.clear();
+    for (const k in data) localStorage.setItem(k, data[k]);
+    alert("Backup restaurado. Recarregue a página.");
+  };
+  reader.readAsText(file);
+}
+</script>
+
 </body>
 </html>
