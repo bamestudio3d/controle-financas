@@ -2,8 +2,866 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle de Finanças V3.3 - Compras Parceladas + Relatório PDF</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Finanças • Controle Financeiro Pessoal</title>
+  
+  <!-- React e dependências -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Estilos customizados -->
+  <style>
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    body {
+      background: #0C0C0C;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .nubank-card {
+      background: linear-gradient(135deg, #8A05BE, #E0209B);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 8px 32px rgba(138, 5, 190, 0.3);
+    }
+    
+    .card-modern {
+      background: #1A1A1A;
+      border-radius: 16px;
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #8A05BE, #E0209B);
+      color: white;
+      border: none;
+      border-radius: 100px;
+      font-weight: 600;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 100px;
+      font-weight: 500;
+      padding: 12px 24px;
+      cursor: pointer;
+    }
+    
+    .input-modern {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: white;
+      padding: 12px 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .input-modern:focus {
+      outline: none;
+      border-color: #8A05BE;
+    }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .slide-in-right {
+      animation: slideInRight 0.3s ease-out;
+    }
+    
+    /* Ajustes para mobile */
+    @media (max-width: 640px) {
+      .hide-on-mobile {
+        display: none;
+      }
+    }
+    
+    /* Scrollbar customizada */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #8A05BE;
+      border-radius: 3px;
+    }
+  </style>
+  
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Ícones Material -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // ========== COMPONENTE PRINCIPAL ==========
+    function App() {
+      // Estados principais
+      const [payments, setPayments] = React.useState(() => {
+        try {
+          const saved = localStorage.getItem('financas_payments');
+          return saved ? JSON.parse(saved) : [];
+        } catch {
+          return [];
+        }
+      });
+      
+      const [selectedMonth, setSelectedMonth] = React.useState(() => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+      });
+      
+      const [showAddModal, setShowAddModal] = React.useState(false);
+      const [editingPayment, setEditingPayment] = React.useState(null);
+      const [formData, setFormData] = React.useState({
+        title: '',
+        amount: '',
+        day: '',
+        category: 'outros',
+        paid: false,
+        notes: ''
+      });
+      
+      const [showMenu, setShowMenu] = React.useState(false);
+      const [notification, setNotification] = React.useState({
+        show: false,
+        text: '',
+        type: 'success'
+      });
+
+      // Efeitos
+      React.useEffect(() => {
+        localStorage.setItem('financas_payments', JSON.stringify(payments));
+      }, [payments]);
+
+      // Funções utilitárias
+      const formatCurrency = (value) => {
+        if (!value && value !== 0) return 'R$ 0,00';
+        return Number(value).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        });
+      };
+
+      const parseCurrencyInput = (input) => {
+        if (!input) return 0;
+        // Remove tudo exceto números, vírgula e ponto
+        const cleaned = input.replace(/[^\d,.-]/g, '');
+        // Substitui vírgula por ponto para parseFloat
+        const normalized = cleaned.replace(',', '.');
+        const value = parseFloat(normalized);
+        return isNaN(value) ? 0 : value;
+      };
+
+      const formatDate = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        return date.toLocaleDateString('pt-BR');
+      };
+
+      const changeMonth = (direction) => {
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const newDate = new Date(year, month - 1 + direction, 1);
+        const newYear = newDate.getFullYear();
+        const newMonth = String(newDate.getMonth() + 1).padStart(2, '0');
+        setSelectedMonth(`${newYear}-${newMonth}`);
+      };
+
+      const getMonthName = () => {
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const date = new Date(year, month - 1, 1);
+        return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      };
+
+      const getPaymentsForMonth = () => {
+        return payments.filter(payment => {
+          if (!payment.dueDate) return false;
+          const paymentDate = new Date(payment.dueDate);
+          const paymentMonth = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`;
+          return paymentMonth === selectedMonth;
+        });
+      };
+
+      const getTotals = () => {
+        const monthPayments = getPaymentsForMonth();
+        const total = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const paid = monthPayments.filter(p => p.paid).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const pending = monthPayments.filter(p => !p.paid).reduce((sum, p) => sum + (p.amount || 0), 0);
+        
+        return { total, paid, pending };
+      };
+
+      // Funções de CRUD
+      const handleAddPayment = () => {
+        if (!formData.title.trim()) {
+          showNotification('Informe uma descrição', 'error');
+          return;
+        }
+
+        const amount = parseCurrencyInput(formData.amount);
+        if (amount <= 0) {
+          showNotification('Informe um valor válido', 'error');
+          return;
+        }
+
+        const day = parseInt(formData.day) || new Date().getDate();
+        const [year, month] = selectedMonth.split('-').map(Number);
+        
+        // Garantir que o dia seja válido para o mês
+        const lastDay = new Date(year, month, 0).getDate();
+        const validDay = Math.min(Math.max(1, day), lastDay);
+
+        const newPayment = {
+          id: Date.now(),
+          title: formData.title.trim(),
+          amount: amount,
+          dueDate: new Date(year, month - 1, validDay).toISOString(),
+          category: formData.category,
+          paid: formData.paid,
+          notes: formData.notes,
+          createdAt: new Date().toISOString()
+        };
+
+        if (editingPayment) {
+          setPayments(prev => prev.map(p => 
+            p.id === editingPayment.id ? newPayment : p
+          ));
+          showNotification('Pagamento atualizado!');
+        } else {
+          setPayments(prev => [...prev, newPayment]);
+          showNotification('Pagamento adicionado!');
+        }
+
+        handleCloseModal();
+      };
+
+      const handleEditPayment = (payment) => {
+        setEditingPayment(payment);
+        const dueDate = new Date(payment.dueDate);
+        setFormData({
+          title: payment.title,
+          amount: payment.amount.toFixed(2).replace('.', ','),
+          day: dueDate.getDate().toString(),
+          category: payment.category || 'outros',
+          paid: payment.paid || false,
+          notes: payment.notes || ''
+        });
+        setShowAddModal(true);
+      };
+
+      const handleDeletePayment = (paymentId) => {
+        if (confirm('Tem certeza que deseja excluir este pagamento?')) {
+          setPayments(prev => prev.filter(p => p.id !== paymentId));
+          showNotification('Pagamento excluído!');
+        }
+      };
+
+      const handleTogglePaid = (paymentId) => {
+        setPayments(prev => prev.map(p => 
+          p.id === paymentId ? { ...p, paid: !p.paid } : p
+        ));
+        showNotification('Status atualizado!');
+      };
+
+      const handleCloseModal = () => {
+        setShowAddModal(false);
+        setEditingPayment(null);
+        setFormData({
+          title: '',
+          amount: '',
+          day: '',
+          category: 'outros',
+          paid: false,
+          notes: ''
+        });
+      };
+
+      const showNotification = (text, type = 'success') => {
+        setNotification({ show: true, text, type });
+        setTimeout(() => {
+          setNotification({ show: false, text: '', type: 'success' });
+        }, 3000);
+      };
+
+      const exportData = () => {
+        const data = {
+          payments,
+          exportDate: new Date().toISOString(),
+          version: '1.0'
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup-financas-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showNotification('Backup exportado com sucesso!');
+      };
+
+      const importData = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (data.payments && Array.isArray(data.payments)) {
+              setPayments(data.payments);
+              showNotification('Dados importados com sucesso!');
+            } else {
+              showNotification('Arquivo inválido', 'error');
+            }
+          } catch (error) {
+            showNotification('Erro ao importar arquivo', 'error');
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+      };
+
+      const clearData = () => {
+        if (confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados. Tem certeza?')) {
+          if (prompt('Digite "APAGAR" para confirmar:') === 'APAGAR') {
+            setPayments([]);
+            localStorage.removeItem('financas_payments');
+            showNotification('Dados apagados com sucesso!');
+          }
+        }
+      };
+
+      // Categorias
+      const categories = [
+        { id: 'alimentacao', name: '🍔 Alimentação', color: '#00D68F' },
+        { id: 'transporte', name: '🚗 Transporte', color: '#FFAA00' },
+        { id: 'moradia', name: '🏠 Moradia', color: '#0095FF' },
+        { id: 'lazer', name: '🎮 Lazer', color: '#FF3D71' },
+        { id: 'saude', name: '💊 Saúde', color: '#8A05BE' },
+        { id: 'educacao', name: '📚 Educação', color: '#00CEC9' },
+        { id: 'outros', name: '📦 Outros', color: '#8C8C8C' }
+      ];
+
+      // Cálculos
+      const monthPayments = getPaymentsForMonth();
+      const pendingPayments = monthPayments.filter(p => !p.paid);
+      const paidPayments = monthPayments.filter(p => p.paid);
+      const totals = getTotals();
+
+      return (
+        <div className="min-h-screen bg-gray-900 text-white">
+          {/* Header */}
+          <header className="glass-effect sticky top-0 z-40 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="nubank-card w-10 h-10 rounded-xl flex items-center justify-center">
+                  <span className="material-icons-round">payments</span>
+                </div>
+                <div>
+                  <h1 className="font-bold text-lg">Finanças</h1>
+                  <p className="text-xs text-gray-400">{getMonthName()}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => changeMonth(-1)}
+                  className="p-2 hover:bg-white/5 rounded-lg"
+                >
+                  <span className="material-icons-round">chevron_left</span>
+                </button>
+                <button 
+                  onClick={() => changeMonth(1)}
+                  className="p-2 hover:bg-white/5 rounded-lg"
+                >
+                  <span className="material-icons-round">chevron_right</span>
+                </button>
+                <button 
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-2 hover:bg-white/5 rounded-lg"
+                >
+                  <span className="material-icons-round">menu</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Menu Dropdown */}
+            {showMenu && (
+              <div className="absolute top-full right-4 mt-2 w-64 card-modern shadow-2xl slide-in-right">
+                <div className="space-y-2 p-2">
+                  <label className="flex items-center justify-between w-full p-3 hover:bg-white/5 rounded-lg cursor-pointer">
+                    <span>Importar Backup</span>
+                    <span className="material-icons-round">upload</span>
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      onChange={importData}
+                      className="hidden" 
+                    />
+                  </label>
+                  
+                  <button 
+                    onClick={exportData}
+                    className="flex items-center justify-between w-full p-3 hover:bg-white/5 rounded-lg"
+                  >
+                    <span>Exportar Backup</span>
+                    <span className="material-icons-round">download</span>
+                  </button>
+                  
+                  <div className="border-t border-white/10 my-2"></div>
+                  
+                  <button 
+                    onClick={clearData}
+                    className="flex items-center justify-between w-full p-3 hover:bg-white/5 rounded-lg text-red-400"
+                  >
+                    <span>Limpar Todos os Dados</span>
+                    <span className="material-icons-round">delete</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </header>
+
+          {/* Cards de Resumo */}
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="nubank-card">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="p-2 rounded-lg bg-white/10">
+                    <span className="material-icons-round">trending_up</span>
+                  </div>
+                  <div>
+                    <p className="text-sm opacity-80">Saldo</p>
+                    <p className="text-xl font-bold">
+                      {formatCurrency(totals.paid - totals.pending)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs opacity-70">Pagas - Pendentes</p>
+              </div>
+              
+              <div className="card-modern">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="p-2 rounded-lg bg-yellow-500/20">
+                    <span className="material-icons-round text-yellow-400">receipt</span>
+                  </div>
+                  <div>
+                    <p className="text-sm opacity-80">Pendentes</p>
+                    <p className="text-xl font-bold text-yellow-400">
+                      {formatCurrency(totals.pending)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs opacity-70">{pendingPayments.length} itens</p>
+              </div>
+              
+              <div className="card-modern">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="p-2 rounded-lg bg-green-500/20">
+                    <span className="material-icons-round text-green-400">check_circle</span>
+                  </div>
+                  <div>
+                    <p className="text-sm opacity-80">Pagas</p>
+                    <p className="text-xl font-bold text-green-400">
+                      {formatCurrency(totals.paid)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs opacity-70">{paidPayments.length} itens</p>
+              </div>
+              
+              <div className="card-modern">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="p-2 rounded-lg bg-purple-500/20">
+                    <span className="material-icons-round text-purple-400">payments</span>
+                  </div>
+                  <div>
+                    <p className="text-sm opacity-80">Total</p>
+                    <p className="text-xl font-bold">
+                      {formatCurrency(totals.total)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs opacity-70">Todas as despesas</p>
+              </div>
+            </div>
+
+            {/* Lista de Pagamentos */}
+            <div className="mb-20">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Pagamentos do Mês</h2>
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <span className="material-icons-round">add</span>
+                  <span>Novo</span>
+                </button>
+              </div>
+
+              {pendingPayments.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-yellow-400 mb-3 flex items-center">
+                    <span className="material-icons-round mr-2">warning</span>
+                    Pendentes ({pendingPayments.length})
+                  </h3>
+                  {pendingPayments.map(payment => (
+                    <PaymentItem 
+                      key={payment.id}
+                      payment={payment}
+                      categories={categories}
+                      onTogglePaid={() => handleTogglePaid(payment.id)}
+                      onEdit={() => handleEditPayment(payment)}
+                      onDelete={() => handleDeletePayment(payment.id)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {paidPayments.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-green-400 mb-3 flex items-center">
+                    <span className="material-icons-round mr-2">check_circle</span>
+                    Pagas ({paidPayments.length})
+                  </h3>
+                  {paidPayments.map(payment => (
+                    <PaymentItem 
+                      key={payment.id}
+                      payment={payment}
+                      categories={categories}
+                      onTogglePaid={() => handleTogglePaid(payment.id)}
+                      onEdit={() => handleEditPayment(payment)}
+                      onDelete={() => handleDeletePayment(payment.id)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {monthPayments.length === 0 && (
+                <div className="card-modern p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                    <span className="material-icons-round text-2xl text-gray-400">receipt</span>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Nenhum pagamento</h3>
+                  <p className="text-gray-400 mb-4">Adicione seu primeiro pagamento para começar</p>
+                  <button 
+                    onClick={() => setShowAddModal(true)}
+                    className="btn-primary"
+                  >
+                    Adicionar Pagamento
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Botão Flutuante */}
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="fixed bottom-6 right-6 btn-primary w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-30"
+          >
+            <span className="material-icons-round">add</span>
+          </button>
+
+          {/* Modal de Adicionar/Editar Pagamento */}
+          {showAddModal && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+              <div className="card-modern w-full max-w-md max-h-[90vh] overflow-y-auto slide-in-right">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold">
+                      {editingPayment ? 'Editar Pagamento' : 'Novo Pagamento'}
+                    </h2>
+                    <button 
+                      onClick={handleCloseModal}
+                      className="p-2 hover:bg-white/5 rounded-lg"
+                    >
+                      <span className="material-icons-round">close</span>
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Descrição *</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Supermercado, Conta de Luz..."
+                        value={formData.title}
+                        onChange={e => setFormData({...formData, title: e.target.value})}
+                        className="input-modern"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Valor (R$) *</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: 150,90"
+                          value={formData.amount}
+                          onChange={e => setFormData({...formData, amount: e.target.value})}
+                          className="input-modern"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Dia *</label>
+                        <input
+                          type="number"
+                          placeholder="1-31"
+                          value={formData.day}
+                          onChange={e => setFormData({...formData, day: e.target.value})}
+                          className="input-modern"
+                          min="1"
+                          max="31"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Categoria</label>
+                      <select
+                        value={formData.category}
+                        onChange={e => setFormData({...formData, category: e.target.value})}
+                        className="input-modern"
+                      >
+                        {categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Status</label>
+                      <div className="flex space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, paid: false})}
+                          className={`flex-1 py-2 rounded-lg border ${
+                            !formData.paid
+                              ? 'border-red-500 bg-red-500/10 text-red-400'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          Pendente
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, paid: true})}
+                          className={`flex-1 py-2 rounded-lg border ${
+                            formData.paid
+                              ? 'border-green-500 bg-green-500/10 text-green-400'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          Pago
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Observações (opcional)</label>
+                      <textarea
+                        placeholder="Adicione observações..."
+                        value={formData.notes}
+                        onChange={e => setFormData({...formData, notes: e.target.value})}
+                        rows="3"
+                        className="input-modern resize-none"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-3 mt-8">
+                    <button
+                      onClick={handleAddPayment}
+                      className="btn-primary flex-1 py-3"
+                    >
+                      {editingPayment ? 'Atualizar' : 'Salvar'}
+                    </button>
+                    <button
+                      onClick={handleCloseModal}
+                      className="btn-secondary flex-1 py-3"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Notificação */}
+          {notification.show && (
+            <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-2xl z-50 fade-in ${
+              notification.type === 'error' ? 'bg-red-500' :
+              notification.type === 'warning' ? 'bg-yellow-500' :
+              'bg-green-500'
+            }`}>
+              <div className="flex items-center space-x-2">
+                {notification.type === 'error' && (
+                  <span className="material-icons-round">error</span>
+                )}
+                {notification.type === 'warning' && (
+                  <span className="material-icons-round">warning</span>
+                )}
+                {notification.type === 'success' && (
+                  <span className="material-icons-round">check_circle</span>
+                )}
+                <span>{notification.text}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ========== COMPONENTE DE ITEM DE PAGAMENTO ==========
+    function PaymentItem({ payment, categories, onTogglePaid, onEdit, onDelete }) {
+      const category = categories.find(c => c.id === payment.category) || categories.find(c => c.id === 'outros');
+      
+      return (
+        <div className="card-modern mb-3 fade-in">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button 
+                onClick={onTogglePaid}
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  payment.paid 
+                    ? 'bg-green-500' 
+                    : 'border-2 border-yellow-500'
+                }`}
+              >
+                {payment.paid && (
+                  <span className="material-icons-round text-white text-sm">check</span>
+                )}
+              </button>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2">
+                  <div 
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <h3 className={`font-semibold truncate ${payment.paid ? 'line-through opacity-60' : ''}`}>
+                    {payment.title}
+                  </h3>
+                </div>
+                
+                <div className="flex items-center space-x-3 mt-1 text-sm text-gray-400">
+                  <span>{formatDate(payment.dueDate)}</span>
+                  <span>•</span>
+                  <span>{category.name}</span>
+                </div>
+                
+                {payment.notes && (
+                  <p className="text-sm text-gray-400 mt-2">{payment.notes}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <span className={`text-lg font-semibold ${payment.paid ? 'opacity-60' : ''}`}>
+                {formatCurrency(payment.amount)}
+              </span>
+              
+              <div className="flex space-x-1">
+                <button 
+                  onClick={onEdit}
+                  className="p-1 hover:bg-white/5 rounded"
+                >
+                  <span className="material-icons-round text-gray-400 text-lg">edit</span>
+                </button>
+                <button 
+                  onClick={onDelete}
+                  className="p-1 hover:bg-white/5 rounded"
+                >
+                  <span className="material-icons-round text-gray-400 text-lg">delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Função helper dentro do componente
+    function formatDate(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      return date.toLocaleDateString('pt-BR');
+    }
+
+    function formatCurrency(value) {
+      if (!value && value !== 0) return 'R$ 0,00';
+      return Number(value).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    // ========== RENDERIZAÇÃO ==========
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5" />
+  <title>Controle de Finanças V3.3 - Responsivo</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,11 +869,47 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
-    /* Animação suave para o login */
+    /* Animações e estilos gerais */
     .fade-in { animation: fadeIn 0.5s ease-in; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     
-    /* Estilos para as cores dos cartões */
+    /* Estilos responsivos para mobile */
+    @media (max-width: 640px) {
+      .mobile-col { flex-direction: column; }
+      .mobile-text-sm { font-size: 0.875rem; }
+      .mobile-p-2 { padding: 0.5rem; }
+      .mobile-w-full { width: 100%; }
+      .mobile-space-y-2 > * + * { margin-top: 0.5rem; }
+      .mobile-hidden { display: none; }
+      .mobile-flex-col { flex-direction: column; }
+      .mobile-text-center { text-align: center; }
+    }
+    
+    /* Melhorias de toque para mobile */
+    button, input, select, textarea {
+      touch-action: manipulation;
+    }
+    
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Ajustes de scroll para modal mobile */
+    .modal-content {
+      max-height: 85vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Prevenir zoom em inputs no iOS */
+    @media (max-width: 768px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
+    
+    /* Estilos para cores dos cartões */
     .card-color-dot {
       display: inline-block;
       width: 12px;
@@ -30,18 +924,17 @@
       max-height: 80vh;
       overflow-y: auto;
     }
+    
+    /* Ajuste para telas muito pequenas */
+    @media (max-width: 360px) {
+      .text-xs-responsive {
+        font-size: 0.75rem;
+      }
+      .text-sm-responsive {
+        font-size: 0.8rem;
+      }
+    }
   </style>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2563eb">
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js');
-  });
-}
-</script>
-
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
   <div id="root"></div>
@@ -67,6 +960,8 @@ if ('serviceWorker' in navigator) {
     const CreditCardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>);
     const XIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
     const PDFIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>);
+    const MenuIcon = () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>);
+    const CloseIcon = () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
 
     const CATEGORIES = [
       { id: 'mercantil', name: '🛒 Mercantil', color: '#10b981', bgColor: 'bg-emerald-500', darkBgColor: 'bg-emerald-600', featured: true },
@@ -635,11 +1530,11 @@ if ('serviceWorker' in navigator) {
       
       return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className={`w-full max-w-4xl rounded-lg shadow-xl pdf-modal ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`w-full max-w-4xl rounded-lg shadow-xl pdf-modal modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Pré-visualização do Relatório</h2>
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <h2 className="text-xl md:text-2xl font-bold">Pré-visualização do Relatório</h2>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 touch-target">
                   <XIcon />
                 </button>
               </div>
@@ -688,40 +1583,40 @@ if ('serviceWorker' in navigator) {
               <div className="space-y-6">
                 {/* Cabeçalho */}
                 <div className="text-center p-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                  <h1 className="text-3xl font-bold mb-2">Relatório Financeiro</h1>
-                  <p className="text-lg">Período: {data.period}</p>
+                  <h1 className="text-2xl md:text-3xl font-bold mb-2">Relatório Financeiro</h1>
+                  <p className="text-base md:text-lg">Período: {data.period}</p>
                   <p className="text-sm opacity-90">Gerado em: {data.generatedDate}</p>
                 </div>
                 
                 {/* Resumo Financeiro */}
                 <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Resumo Financeiro</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <h3 className="text-lg md:text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Resumo Financeiro</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Total Entradas</p>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">{currencyFormat(data.summary.totalEntries)}</p>
+                      <p className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">{currencyFormat(data.summary.totalEntries)}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Total Despesas</p>
-                      <p className="text-xl font-bold text-red-600 dark:text-red-400">{currencyFormat(data.summary.totalExpenses)}</p>
+                      <p className="text-lg md:text-xl font-bold text-red-600 dark:text-red-400">{currencyFormat(data.summary.totalExpenses)}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Saldo do Mês</p>
-                      <p className={`text-xl font-bold ${data.summary.monthBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      <p className={`text-lg md:text-xl font-bold ${data.summary.monthBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {currencyFormat(data.summary.monthBalance)}
                       </p>
                     </div>
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Contas Pagas</p>
-                      <p className="text-xl font-bold">{data.summary.paidCount} / {data.summary.totalCount}</p>
+                      <p className="text-lg md:text-xl font-bold">{data.summary.paidCount} / {data.summary.totalCount}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Valor Pago</p>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">{currencyFormat(data.summary.paidAmount)}</p>
+                      <p className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">{currencyFormat(data.summary.paidAmount)}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Valor Pendente</p>
-                      <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{currencyFormat(data.summary.pendingAmount)}</p>
+                      <p className="text-lg md:text-xl font-bold text-yellow-600 dark:text-yellow-400">{currencyFormat(data.summary.pendingAmount)}</p>
                     </div>
                   </div>
                 </div>
@@ -729,7 +1624,7 @@ if ('serviceWorker' in navigator) {
                 {/* Despesas por Categoria */}
                 {options.includeCategories && data.categories && data.categories.length > 0 && (
                   <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Despesas por Categoria</h3>
+                    <h3 className="text-lg md:text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Despesas por Categoria</h3>
                     <div className="space-y-3">
                       {data.categories.map((cat, index) => {
                         const percentage = data.summary.totalExpenses > 0 
@@ -739,7 +1634,7 @@ if ('serviceWorker' in navigator) {
                         return (
                           <div key={index} className="space-y-1">
                             <div className="flex justify-between">
-                              <span className="font-medium">{cat.label}</span>
+                              <span className="font-medium text-sm-responsive">{cat.label}</span>
                               <span className="font-bold">{currencyFormat(cat.value)}</span>
                             </div>
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
@@ -764,24 +1659,24 @@ if ('serviceWorker' in navigator) {
                 {/* Contas do Mês */}
                 {options.includePayments && data.payments && data.payments.length > 0 && (
                   <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Contas do Mês ({data.payments.length})</h3>
+                    <h3 className="text-lg md:text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Contas do Mês ({data.payments.length})</h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b dark:border-gray-700">
-                            <th className="text-left py-2">Descrição</th>
-                            <th className="text-left py-2">Data</th>
-                            <th className="text-left py-2">Valor</th>
-                            <th className="text-left py-2">Status</th>
+                            <th className="text-left py-2 text-xs-responsive">Descrição</th>
+                            <th className="text-left py-2 text-xs-responsive">Data</th>
+                            <th className="text-left py-2 text-xs-responsive">Valor</th>
+                            <th className="text-left py-2 text-xs-responsive">Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {data.payments.slice(0, 5).map((payment, index) => (
                             <tr key={index} className="border-b dark:border-gray-700">
-                              <td className="py-2">{payment.title}</td>
-                              <td className="py-2">{payment.date}</td>
-                              <td className="py-2">{currencyFormat(payment.amount)}</td>
-                              <td className="py-2">
+                              <td className="py-2 text-xs-responsive">{payment.title}</td>
+                              <td className="py-2 text-xs-responsive">{payment.date}</td>
+                              <td className="py-2 text-xs-responsive">{currencyFormat(payment.amount)}</td>
+                              <td className="py-2 text-xs-responsive">
                                 <span className={`px-2 py-1 rounded text-xs ${payment.paid ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
                                   {payment.paid ? 'Pago' : 'Pendente'}
                                 </span>
@@ -790,7 +1685,7 @@ if ('serviceWorker' in navigator) {
                           ))}
                           {data.payments.length > 5 && (
                             <tr>
-                              <td colSpan="4" className="py-2 text-center text-gray-500 dark:text-gray-400">
+                              <td colSpan="4" className="py-2 text-center text-gray-500 dark:text-gray-400 text-xs-responsive">
                                 ... e mais {data.payments.length - 5} conta(s)
                               </td>
                             </tr>
@@ -804,11 +1699,11 @@ if ('serviceWorker' in navigator) {
                 {/* Cartões de Crédito */}
                 {options.includeCreditCards && data.creditCards && data.creditCards.length > 0 && (
                   <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Cartões de Crédito</h3>
+                    <h3 className="text-lg md:text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Cartões de Crédito</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {data.creditCards.map((card, index) => (
                         <div key={index} className="p-3 rounded-lg border border-gray-300 dark:border-gray-600">
-                          <h4 className="font-bold mb-2">{card.name}</h4>
+                          <h4 className="font-bold mb-2 text-sm-responsive">{card.name}</h4>
                           <div className="space-y-1 text-sm">
                             <div className="flex justify-between">
                               <span>Vencimento:</span>
@@ -845,14 +1740,14 @@ if ('serviceWorker' in navigator) {
               <div className="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
                 <button 
                   onClick={onGenerate}
-                  className="flex-1 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold transition-colors flex items-center justify-center space-x-2"
+                  className="flex-1 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold transition-colors flex items-center justify-center space-x-2 touch-target"
                 >
                   <Download />
                   <span>Gerar e Baixar PDF</span>
                 </button>
                 <button 
                   onClick={onClose}
-                  className="flex-1 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-bold transition-colors"
+                  className="flex-1 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-bold transition-colors touch-target"
                 >
                   Cancelar
                 </button>
@@ -900,11 +1795,11 @@ if ('serviceWorker' in navigator) {
       
       return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className={`w-full max-w-md rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`w-full max-w-md rounded-lg shadow-xl modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Gerar Relatório PDF</h2>
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <h2 className="text-xl font-bold">Gerar Relatório PDF</h2>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 touch-target">
                   <XIcon />
                 </button>
               </div>
@@ -964,13 +1859,13 @@ if ('serviceWorker' in navigator) {
               <div className="flex space-x-3 mb-6">
                 <button 
                   onClick={selectAll}
-                  className="flex-1 py-2 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 font-medium"
+                  className="flex-1 py-2 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 font-medium touch-target"
                 >
                   Selecionar Tudo
                 </button>
                 <button 
                   onClick={deselectAll}
-                  className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200 font-medium"
+                  className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200 font-medium touch-target"
                 >
                   Desmarcar Tudo
                 </button>
@@ -979,13 +1874,13 @@ if ('serviceWorker' in navigator) {
               <div className="flex space-x-3">
                 <button 
                   onClick={() => onGenerate(options)}
-                  className="flex-1 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors"
+                  className="flex-1 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors touch-target"
                 >
                   Gerar Relatório
                 </button>
                 <button 
                   onClick={onClose}
-                  className="flex-1 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-bold transition-colors"
+                  className="flex-1 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-bold transition-colors touch-target"
                 >
                   Cancelar
                 </button>
@@ -1086,7 +1981,7 @@ if ('serviceWorker' in navigator) {
                   type="password"
                   value={input}
                   onChange={(e) => { setInput(e.target.value); setError(false); }}
-                  className={`w-full px-4 py-3 rounded-lg border text-center text-lg tracking-widest ${
+                  className={`w-full px-4 py-3 rounded-lg border text-center text-lg tracking-widest touch-target ${
                     error 
                       ? 'border-red-500 focus:ring-red-500' 
                       : darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
@@ -1098,7 +1993,7 @@ if ('serviceWorker' in navigator) {
               </div>
               <button
                 type="submit"
-                className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors shadow-lg"
+                className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors shadow-lg touch-target"
               >
                 DESBLOQUEAR
               </button>
@@ -1122,7 +2017,7 @@ if ('serviceWorker' in navigator) {
                 key={index}
                 type="button"
                 onClick={() => onColorSelect(color)}
-                className={`w-8 h-8 rounded-full border-2 ${selectedColor === color ? 'border-gray-800 scale-110' : 'border-gray-300'}`}
+                className={`w-8 h-8 rounded-full border-2 touch-target ${selectedColor === color ? 'border-gray-800 scale-110' : 'border-gray-300'}`}
                 style={{ backgroundColor: color }}
                 title={`Cor ${index + 1}`}
               />
@@ -1142,6 +2037,9 @@ if ('serviceWorker' in navigator) {
       const [appPassword, setAppPassword] = useState(() => localStorage.getItem('financas_app_password') || null);
       const [showPasswordModal, setShowPasswordModal] = useState(false);
       const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' });
+
+      // Estado para menu mobile
+      const [showMobileMenu, setShowMobileMenu] = useState(false);
 
       // Verificar autenticação ao carregar
       useEffect(() => {
@@ -1230,7 +2128,6 @@ if ('serviceWorker' in navigator) {
         return saved ? JSON.parse(saved) : {};
       });
       const [showGoalsManager, setShowGoalsManager] = useState(false);
-      const [editingGoal, setEditingGoal] = useState(null);
       const [installments, setInstallments] = useState(() => {
         const saved = localStorage.getItem('financas_installments');
         return saved ? JSON.parse(saved) : [];
@@ -1880,23 +2777,23 @@ if ('serviceWorker' in navigator) {
 
         return (
           <div className={`p-4 rounded-lg shadow mb-6 transition-colors duration-200 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-3 sm:space-y-0">
               <h2 className="text-xl font-bold flex items-center space-x-2"><CreditCardIcon /> <span>Cartões de Crédito</span></h2>
-              <div className="flex space-x-2">
-                <button onClick={() => setShowAddCreditCard(true)} className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${darkMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-500 hover:bg-purple-600'} text-white`}>
-                  <Plus /> <span>Cartão</span>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setShowAddCreditCard(true)} className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${darkMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-500 hover:bg-purple-600'} text-white touch-target`}>
+                  <Plus /> <span className="mobile-hidden sm:inline">Cartão</span>
                 </button>
-                <button onClick={() => { setShowAddCreditPurchase(true); setEditingCreditPurchase(null); }} className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white`}>
-                  <Plus /> <span>Compra</span>
+                <button onClick={() => { setShowAddCreditPurchase(true); setEditingCreditPurchase(null); }} className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 ${darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white touch-target`}>
+                  <Plus /> <span className="mobile-hidden sm:inline">Compra</span>
                 </button>
-                <button onClick={() => setShowCreditCards(false)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}>Voltar</button>
+                <button onClick={() => setShowCreditCards(false)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${darkMode ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-gray-200 hover:bg-gray-300'} touch-target`}>Voltar</button>
               </div>
             </div>
             
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-4 p-3 rounded-t-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white">
                     <div className="flex items-center">
-                        <h3 className="text-lg font-semibold">Resumo dos Cartões (Mês Atual)</h3>
+                        <h3 className="text-base sm:text-lg font-semibold">Resumo dos Cartões (Mês Atual)</h3>
                         <button 
                             onClick={() => toggleSection('creditCardsSummary')} 
                             className="ml-2 text-white"
@@ -1904,13 +2801,13 @@ if ('serviceWorker' in navigator) {
                             {sectionVisibility.creditCardsSummary ? '▼' : '►'}
                         </button>
                     </div>
-                    <span className="text-sm font-medium">
+                    <span className="text-xs sm:text-sm font-medium">
                         {creditCards.filter(card => card.active).length} cartões
                     </span>
                 </div>
                 
                 {sectionVisibility.creditCardsSummary && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {creditCards.filter(card => card.active).map(card => {
                             const totals = cardTotals[card.id] || { currentMonth: 0, future: 0, totalActiveDebt: 0 };
                             const textColorClass = getTextColorClass(card.color);
@@ -1930,26 +2827,26 @@ if ('serviceWorker' in navigator) {
                                             <div>
                                                 <div className="flex items-center space-x-2 mb-1">
                                                     <div className="card-color-dot" style={{ backgroundColor: card.color }}></div>
-                                                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">{card.name}</h3>
+                                                    <h3 className="font-bold text-base sm:text-lg text-gray-800 dark:text-gray-200">{card.name}</h3>
                                                 </div>
                                                 <p className="text-sm text-gray-800 dark:text-gray-200">Vence dia {card.dueDay}</p>
                                             </div>
-                                            <div className="flex space-x-2">
-                                                <button onClick={() => payCreditCardBill(card.id)} className={`px-3 py-1 rounded text-xs font-medium ${totals.currentMonth > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300'} text-white`} disabled={totals.currentMonth === 0}>Pagar Fatura</button>
-                                                <button onClick={() => { setEditingCreditCard(card); setFormCreditCard({ name: card.name, dueDay: String(card.dueDay), color: card.color }); setShowAddCreditCard(true); }} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>✏️</button>
-                                                <button onClick={() => deleteCreditCard(card.id)} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>🗑️</button>
+                                            <div className="flex space-x-1 sm:space-x-2">
+                                                <button onClick={() => payCreditCardBill(card.id)} className={`px-2 sm:px-3 py-1 rounded text-xs font-medium ${totals.currentMonth > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300'} text-white touch-target`} disabled={totals.currentMonth === 0}>Pagar</button>
+                                                <button onClick={() => { setEditingCreditCard(card); setFormCreditCard({ name: card.name, dueDay: String(card.dueDay), color: card.color }); setShowAddCreditCard(true); }} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} touch-target`}>✏️</button>
+                                                <button onClick={() => deleteCreditCard(card.id)} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'} touch-target`}>🗑️</button>
                                             </div>
                                         </div>
                                         <div className="space-y-2 text-gray-800 dark:text-gray-200">
-                                            <div className="flex justify-between">
+                                            <div className="flex justify-between text-sm-responsive">
                                                 <span className="opacity-90">Fatura ({formatMonthKey(selectedMonthKey)}):</span>
                                                 <span className={`font-bold ${totals.currentMonth > 0 ? 'text-red-500' : 'text-green-500'}`}>{currencyFormat(totals.currentMonth)}</span>
                                             </div>
-                                            <div className="flex justify-between">
+                                            <div className="flex justify-between text-sm-responsive">
                                                 <span className="opacity-90">Dívida Futura:</span>
                                                 <span className="font-medium text-amber-500">{currencyFormat(totals.future)}</span>
                                             </div>
-                                            <div className="flex justify-between">
+                                            <div className="flex justify-between text-sm-responsive">
                                                 <span className="opacity-90">Total Pendente:</span>
                                                 <span className="font-bold text-red-600 dark:text-red-400">{currencyFormat(totals.totalActiveDebt)}</span>
                                             </div>
@@ -1965,7 +2862,7 @@ if ('serviceWorker' in navigator) {
             <div>
                 <div className="flex items-center justify-between mb-4 p-3 rounded-t-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                     <div className="flex items-center">
-                        <h3 className="text-lg font-semibold">🛒 Compras Parceladas por Cartão</h3>
+                        <h3 className="text-base sm:text-lg font-semibold">🛒 Compras Parceladas por Cartão</h3>
                         <button 
                             onClick={() => toggleSection('creditCardsPurchases')} 
                             className="ml-2 text-white"
@@ -1973,7 +2870,7 @@ if ('serviceWorker' in navigator) {
                             {sectionVisibility.creditCardsPurchases ? '▼' : '►'}
                         </button>
                     </div>
-                    <span className="text-sm font-medium">
+                    <span className="text-xs sm:text-sm font-medium">
                         {creditCardPurchases.filter(p => p.installments.some(inst => !inst.paid)).length} compras ativas
                     </span>
                 </div>
@@ -1991,7 +2888,7 @@ if ('serviceWorker' in navigator) {
                             return (
                                 <div key={card.id} className={`rounded-lg border overflow-hidden ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                                     <div 
-                                        className="p-4 flex justify-between items-center cursor-pointer hover:opacity-90 transition-opacity"
+                                        className="p-4 flex justify-between items-center cursor-pointer hover:opacity-90 transition-opacity touch-target"
                                         style={{ 
                                             backgroundColor: `${card.color}20`,
                                             borderLeft: `6px solid ${card.color}`
@@ -2005,8 +2902,8 @@ if ('serviceWorker' in navigator) {
                                                     {isExpanded ? '▼' : '►'}
                                                 </button>
                                                 <div>
-                                                    <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200">{card.name}</h4>
-                                                    <p className="text-sm text-gray-800 dark:text-gray-200">{activeCardPurchases.length} compra(s) ativa(s)</p>
+                                                    <h4 className="font-bold text-base sm:text-lg text-gray-800 dark:text-gray-200">{card.name}</h4>
+                                                    <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-200">{activeCardPurchases.length} compra(s) ativa(s)</p>
                                                     {/* Indicador de compras deste mês */}
                                                     <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">
                                                         Criadas este mês: {
@@ -2017,8 +2914,8 @@ if ('serviceWorker' in navigator) {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-sm text-gray-800 dark:text-gray-200 opacity-80">Total Pendente</div>
-                                            <div className="font-bold text-red-500">
+                                            <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 opacity-80">Total Pendente</div>
+                                            <div className="font-bold text-red-500 text-sm-responsive">
                                                 {currencyFormat(
                                                     activeCardPurchases.reduce((total, purchase) => {
                                                         const remainingAmount = purchase.installments
@@ -2041,44 +2938,44 @@ if ('serviceWorker' in navigator) {
                                                 return (
                                                     <div 
                                                         key={purchase.id} 
-                                                        className={`flex flex-col md:flex-row justify-between items-start md:items-center transition-colors duration-200 ${darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'}`}
+                                                        className={`flex flex-col md:flex-row justify-between items-start md:items-center transition-colors duration-200 ${darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'} p-4`}
                                                         style={{ backgroundColor: lightColor }}
                                                     >
-                                                        <div className="flex-1 min-w-0 mb-2 md:mb-0 p-4">
+                                                        <div className="flex-1 min-w-0 mb-2 md:mb-0">
                                                             <div className="flex items-center space-x-2 mb-1">
-                                                                <div className="font-bold truncate text-gray-800 dark:text-gray-200">{purchase.title}</div>
+                                                                <div className="font-bold truncate text-gray-800 dark:text-gray-200 text-sm-responsive">{purchase.title}</div>
                                                                 {/* Indicador de data de criação */}
-                                                                <span className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-full">
+                                                                <span className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-full hidden sm:inline">
                                                                     Criada: {purchase.createdAt ? formatDateDisplay(purchase.createdAt) : formatMonthKey(purchase.createdInMonth || selectedMonthKey)}
                                                                 </span>
                                                             </div>
-                                                            <div className="text-sm text-gray-800 dark:text-gray-200 space-x-2">
+                                                            <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-200 space-x-2">
                                                                 <span>{paidCount}/{purchase.installmentCount} parcelas</span>
                                                                 <span>|</span>
                                                                 <span>Início: {formatMonthKey(purchase.firstDueMonth)}</span>
                                                             </div>
                                                         </div>
-                                                        <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4 min-w-[280px] p-4">
+                                                        <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
                                                             {/* Valor do mês atual */}
-                                                            <div className="text-right">
+                                                            <div className="text-right w-full md:w-auto">
                                                                 <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Este Mês</div>
-                                                                <div className="font-bold text-blue-500">{currencyFormat(currentMonthAmount)}</div>
+                                                                <div className="font-bold text-blue-500 text-sm-responsive">{currencyFormat(currentMonthAmount)}</div>
                                                             </div>
-                                                            <div className="text-right">
+                                                            <div className="text-right w-full md:w-auto">
                                                                 <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Falta Pagar</div>
-                                                                <div className="font-bold text-red-500">{currencyFormat(remainingAmount)}</div>
+                                                                <div className="font-bold text-red-500 text-sm-responsive">{currencyFormat(remainingAmount)}</div>
                                                             </div>
-                                                            <div className="text-right">
+                                                            <div className="text-right w-full md:w-auto">
                                                                 <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Total Pago</div>
-                                                                <div className="font-medium text-green-500">{currencyFormat(paidAmount)}</div>
+                                                                <div className="font-medium text-green-500 text-sm-responsive">{currencyFormat(paidAmount)}</div>
                                                             </div>
-                                                            <div className="flex space-x-2">
+                                                            <div className="flex space-x-2 w-full md:w-auto justify-end md:justify-start">
                                                                 <button 
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         startEditCreditPurchase(purchase);
                                                                     }} 
-                                                                    className={`p-1 rounded text-blue-500 hover:text-blue-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`} 
+                                                                    className={`p-1 rounded text-blue-500 hover:text-blue-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} touch-target`} 
                                                                     title="Editar Compra"
                                                                 >
                                                                     ✏️
@@ -2088,7 +2985,7 @@ if ('serviceWorker' in navigator) {
                                                                         e.stopPropagation();
                                                                         deleteCreditPurchase(purchase.id);
                                                                     }} 
-                                                                    className={`p-1 rounded text-red-500 hover:text-red-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`} 
+                                                                    className={`p-1 rounded text-red-500 hover:text-red-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'} touch-target`} 
                                                                     title="Remover Compra"
                                                                 >
                                                                     <XIcon />
@@ -2660,77 +3557,148 @@ if ('serviceWorker' in navigator) {
 
       return (
         <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-          <header className={`sticky top-0 z-10 shadow-sm transition-colors duration-200 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <h1 className="text-xl font-bold">💰 Finanças</h1>
+          {/* Header responsivo */}
+          <header className={`sticky top-0 z-20 shadow-sm transition-colors duration-200 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+              {/* Primeira linha: título e menu mobile */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-3">
+                  <button 
+                    onClick={() => setShowMobileMenu(!showMobileMenu)}
+                    className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} md:hidden`}
+                  >
+                    {showMobileMenu ? <CloseIcon /> : <MenuIcon />}
+                  </button>
+                  <h1 className="text-xl font-bold">💰 Finanças</h1>
+                </div>
+                
                 <div className="flex items-center space-x-2">
-                  <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Left /></button>
-                  <span className="text-lg font-semibold min-w-[120px] text-center">{new Date(monthFromKey(selectedMonthKey)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
-                  <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Right /></button>
+                  {/* Botão para alternar cartões */}
+                  <button onClick={() => setShowCreditCards(!showCreditCards)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`} title="Cartões"><CreditCardIcon /></button>
+                  
+                  {/* Botão tema escuro/claro */}
+                  <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}>{darkMode ? <Sun /> : <Moon />}</button>
                 </div>
               </div>
-
-              <div className="flex items-center space-x-2">
-                <button onClick={() => setShowCreditCards(!showCreditCards)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} title="Cartões"><CreditCardIcon /></button>
+              
+              {/* Segunda linha: navegação do mês */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <button onClick={() => changeMonth(-1)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}><Left /></button>
+                  <span className="text-lg font-semibold min-w-[120px] text-center">{new Date(monthFromKey(selectedMonthKey)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+                  <button onClick={() => changeMonth(1)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}><Right /></button>
+                </div>
                 
-                {/* NOVO BOTÃO PARA GERAR PDF */}
-                <button 
-                  onClick={() => setShowPDFConfig(true)} 
-                  className={`p-2 rounded-lg transition-colors flex items-center justify-center ${darkMode ? 'hover:bg-gray-700 text-red-400' : 'hover:bg-gray-100 text-red-500'}`}
-                  title="Gerar Relatório PDF"
-                >
-                  <PDFIcon />
-                </button>
-                
-                <button 
-                  onClick={() => setShowPasswordModal(true)} 
-                  className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700 text-yellow-400' : 'hover:bg-gray-100 text-yellow-600'}`}
-                  title="Configurar Senha"
-                >
-                  {appPassword ? <Lock /> : <Unlock />}
-                </button>
+                {/* Menu desktop (escondido no mobile) */}
+                <div className="hidden md:flex items-center space-x-2">
+                  {/* NOVO BOTÃO PARA GERAR PDF */}
+                  <button 
+                    onClick={() => setShowPDFConfig(true)} 
+                    className={`p-2 rounded-lg transition-colors flex items-center justify-center ${darkMode ? 'hover:bg-gray-700 text-red-400' : 'hover:bg-gray-100 text-red-500'} touch-target`}
+                    title="Gerar Relatório PDF"
+                  >
+                    <PDFIcon />
+                  </button>
+                  
+                  <button 
+                    onClick={() => setShowPasswordModal(true)} 
+                    className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700 text-yellow-400' : 'hover:bg-gray-100 text-yellow-600'} touch-target`}
+                    title="Configurar Senha"
+                  >
+                    {appPassword ? <Lock /> : <Unlock />}
+                  </button>
 
-                <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>{darkMode ? <Sun /> : <Moon />}</button>
-                <button onClick={() => setShowDashboard(!showDashboard)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><DashboardIcon /></button>
-                <button onClick={() => setShowAnalytics(!showAnalytics)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><ChartIcon /></button>
-                <button onClick={exportData} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Download /></button>
-                <label className={`p-2 rounded-lg cursor-pointer transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}><Upload /><input type="file" accept=".json" onChange={importData} className="hidden" /></label>
-                <button onClick={clearAllData} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700 text-red-400' : 'hover:bg-gray-100 text-red-500'}`} title="Apagar tudo">🗑️</button>
+                  <button onClick={() => setShowDashboard(!showDashboard)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}><DashboardIcon /></button>
+                  <button onClick={() => setShowAnalytics(!showAnalytics)} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}><ChartIcon /></button>
+                  <button onClick={exportData} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}><Download /></button>
+                  <label className={`p-2 rounded-lg cursor-pointer transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}><Upload /><input type="file" accept=".json" onChange={importData} className="hidden" /></label>
+                  <button onClick={clearAllData} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700 text-red-400' : 'hover:bg-gray-100 text-red-500'} touch-target`} title="Apagar tudo">🗑️</button>
+                </div>
               </div>
             </div>
+            
+            {/* Menu mobile expandido */}
+            {showMobileMenu && (
+              <div className={`md:hidden border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="grid grid-cols-4 gap-1 p-3">
+                  <button 
+                    onClick={() => { setShowPDFConfig(true); setShowMobileMenu(false); }} 
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}
+                    title="Gerar PDF"
+                  >
+                    <PDFIcon className="w-5 h-5 mb-1" />
+                    <span className="text-xs">PDF</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => { setShowPasswordModal(true); setShowMobileMenu(false); }} 
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}
+                    title="Senha"
+                  >
+                    {appPassword ? <Lock className="w-5 h-5 mb-1" /> : <Unlock className="w-5 h-5 mb-1" />}
+                    <span className="text-xs">Senha</span>
+                  </button>
+                  
+                  <button onClick={() => { setShowDashboard(!showDashboard); setShowMobileMenu(false); }} className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}>
+                    <DashboardIcon className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Dashboard</span>
+                  </button>
+                  
+                  <button onClick={() => { setShowAnalytics(!showAnalytics); setShowMobileMenu(false); }} className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}>
+                    <ChartIcon className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Análises</span>
+                  </button>
+                  
+                  <button onClick={() => { exportData(); setShowMobileMenu(false); }} className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}>
+                    <Download className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Exportar</span>
+                  </button>
+                  
+                  <label className={`flex flex-col items-center justify-center p-3 rounded-lg cursor-pointer transition-colors ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} touch-target`}>
+                    <Upload className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Importar</span>
+                    <input type="file" accept=".json" onChange={importData} className="hidden" />
+                  </label>
+                  
+                  <button onClick={() => { clearAllData(); setShowMobileMenu(false); }} className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${darkMode ? 'hover:bg-gray-700 text-red-400' : 'hover:bg-gray-100 text-red-500'} touch-target`}>
+                    <span className="text-lg mb-1">🗑️</span>
+                    <span className="text-xs">Limpar</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </header>
 
           {showCreditCards && <CreditCardsSection />}
 
           {!showCreditCards && (
-            <main className="max-w-7xl mx-auto px-4 py-6">
+            <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
               {showDashboard && (
                 <div className={`max-w-7xl mx-auto p-4 mb-4 rounded-lg shadow transition-colors duration-200 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
                     <h2 className="text-xl font-bold">📊 Dashboard</h2>
-                    <button onClick={() => setShowBudgetManager(!showBudgetManager)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${darkMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-500 hover:bg-purple-600'} text-white`}>{showBudgetManager ? 'Voltar' : 'Orçamentos'}</button>
+                    <button onClick={() => setShowBudgetManager(!showBudgetManager)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${darkMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-purple-500 hover:bg-purple-600'} text-white touch-target`}>{showBudgetManager ? 'Voltar' : 'Orçamentos'}</button>
                   </div>
                   {showBudgetManager ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {CATEGORIES.map(cat => (
                         <div key={cat.id} className={`p-4 rounded-lg border transition-colors duration-200 ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                          <div className="flex items-center justify-between mb-3"><span className="font-medium">{cat.name}</span><span style={{ color: cat.color }}>●</span></div>
-                          <input type="number" placeholder="Orçamento mensal" value={categoryBudgets[cat.id] || ''} onChange={(e) => setBudgetForCategory(cat.id, e.target.value)} className={`w-full px-3 py-2 rounded border transition-colors duration-200 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`} />
+                          <div className="flex items-center justify-between mb-3"><span className="font-medium text-sm-responsive">{cat.name}</span><span style={{ color: cat.color }}>●</span></div>
+                          <input type="number" placeholder="Orçamento mensal" value={categoryBudgets[cat.id] || ''} onChange={(e) => setBudgetForCategory(cat.id, e.target.value)} className={`w-full px-3 py-2 rounded border transition-colors duration-200 text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`} />
                         </div>
                       ))}
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Saldo Atual</div><div className={`text-2xl font-bold ${dashboardMetrics.currentSaldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(dashboardMetrics.currentSaldo)}</div></div>
-                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Economia Mês</div><div className={`text-2xl font-bold ${dashboardMetrics.currentSavings >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(dashboardMetrics.currentSavings)}</div></div>
-                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Média Despesas</div><div className="text-2xl font-bold text-orange-500">{currencyFormat(dashboardMetrics.avgExpenses)}</div></div>
-                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Média Entradas</div><div className="text-2xl font-bold text-blue-500">{currencyFormat(dashboardMetrics.avgEntries)}</div></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Saldo Atual</div><div className={`text-lg sm:text-xl font-bold ${dashboardMetrics.currentSaldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(dashboardMetrics.currentSaldo)}</div></div>
+                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Economia Mês</div><div className={`text-lg sm:text-xl font-bold ${dashboardMetrics.currentSavings >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(dashboardMetrics.currentSavings)}</div></div>
+                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Média Despesas</div><div className="text-lg sm:text-xl font-bold text-orange-500">{currencyFormat(dashboardMetrics.avgExpenses)}</div></div>
+                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}><div className="text-sm opacity-70">Média Entradas</div><div className="text-lg sm:text-xl font-bold text-blue-500">{currencyFormat(dashboardMetrics.avgEntries)}</div></div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-emerald-700 bg-emerald-900/20' : 'border-emerald-200 bg-emerald-50'}`}><h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-3">🛒 Mercantil (Este Mês)</h3><div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400"><span>Total:</span><span>{currencyFormat(quickStats.mercantil.total)}</span></div></div>
-                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-amber-700 bg-amber-900/20' : 'border-amber-200 bg-amber-50'}`}><h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-3">🍕 Lanches (Este Mês)</h3><div className="flex justify-between font-bold text-amber-600 dark:text-amber-400"><span>Total:</span><span>{currencyFormat(quickStats.lanches.total)}</span></div></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
+                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-emerald-700 bg-emerald-900/20' : 'border-emerald-200 bg-emerald-50'}`}><h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-3 text-sm-responsive">🛒 Mercantil (Este Mês)</h3><div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400"><span>Total:</span><span>{currencyFormat(quickStats.mercantil.total)}</span></div></div>
+                        <div className={`p-4 rounded-lg border ${darkMode ? 'border-amber-700 bg-amber-900/20' : 'border-amber-200 bg-amber-50'}`}><h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-3 text-sm-responsive">🍕 Lanches (Este Mês)</h3><div className="flex justify-between font-bold text-amber-600 dark:text-amber-400"><span>Total:</span><span>{currencyFormat(quickStats.lanches.total)}</span></div></div>
                       </div>
                     </>
                   )}
@@ -2741,8 +3709,16 @@ if ('serviceWorker' in navigator) {
                 <div className={`max-w-7xl mx-auto p-4 mb-4 rounded-lg shadow transition-colors duration-200 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   <h2 className="text-xl font-bold mb-4">📈 Análises</h2>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}><PieChart data={categoryData} title="Despesas por Categoria" /></div>
-                    <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}><BarChart data={comparisonData} title="Comparativo Mensal" /></div>
+                    <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                      <div className="h-64">
+                        <PieChart data={categoryData} title="Despesas por Categoria" />
+                      </div>
+                    </div>
+                    <div className={`p-4 rounded-lg border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                      <div className="h-64">
+                        <BarChart data={comparisonData} title="Comparativo Mensal" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2752,10 +3728,10 @@ if ('serviceWorker' in navigator) {
                 <div className="mb-6 space-y-2">
                   {reminders.map((rem, idx) => (
                     <div key={idx} className={`p-4 rounded-lg border ${rem.type === 'overdue' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'}`}>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-medium">{rem.p.title}</span>
-                          <span className="text-sm ml-2">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                        <div className="mb-2 sm:mb-0">
+                          <span className="font-medium text-sm-responsive">{rem.p.title}</span>
+                          <span className="text-sm ml-2 block sm:inline">
                             {rem.type === 'overdue' ? `Atrasado ${Math.abs(rem.days)} dia(s)` : `Vence em ${rem.days} dia(s)`}
                           </span>
                           {rem.p.isCardSummary && (
@@ -2764,7 +3740,7 @@ if ('serviceWorker' in navigator) {
                             </div>
                           )}
                         </div>
-                        <span className="font-bold text-red-600 dark:text-red-400">
+                        <span className="font-bold text-red-600 dark:text-red-400 text-sm-responsive">
                           {currencyFormat(rem.p.amount)}
                         </span>
                       </div>
@@ -2773,48 +3749,92 @@ if ('serviceWorker' in navigator) {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div className={`p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}><div className="text-sm opacity-60">Total Despesas</div><div className="text-xl font-bold text-red-500">{currencyFormat(totals.totalSum)}</div></div>
-                <div className={`p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}><div className="text-sm opacity-60">Pago</div><div className="text-xl font-bold text-green-500">{currencyFormat(totals.paidSum)}</div></div>
-                <div className={`p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}><div className="text-sm opacity-60">Pendente</div><div className="text-xl font-bold text-yellow-500">{currencyFormat(totals.pendingSum)}</div></div>
-                <div className={`p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}><div className="text-sm opacity-60">Entradas</div><div className="text-xl font-bold text-blue-500">{currencyFormat(totals.entriesSum)}</div></div>
-                <div className={`p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}><div className="text-sm opacity-60">Saldo</div><div className={`text-xl font-bold ${totals.saldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(totals.saldo)}</div></div>
+              {/* Resumo financeiro - Responsivo */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 mb-6">
+                <div className={`p-3 sm:p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="text-xs sm:text-sm opacity-60">Total Despesas</div>
+                  <div className="text-base sm:text-xl font-bold text-red-500">{currencyFormat(totals.totalSum)}</div>
+                </div>
+                <div className={`p-3 sm:p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="text-xs sm:text-sm opacity-60">Pago</div>
+                  <div className="text-base sm:text-xl font-bold text-green-500">{currencyFormat(totals.paidSum)}</div>
+                </div>
+                <div className={`p-3 sm:p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="text-xs sm:text-sm opacity-60">Pendente</div>
+                  <div className="text-base sm:text-xl font-bold text-yellow-500">{currencyFormat(totals.pendingSum)}</div>
+                </div>
+                <div className={`p-3 sm:p-4 rounded-lg text-center shadow ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="text-xs sm:text-sm opacity-60">Entradas</div>
+                  <div className="text-base sm:text-xl font-bold text-blue-500">{currencyFormat(totals.entriesSum)}</div>
+                </div>
+                <div className={`p-3 sm:p-4 rounded-lg text-center shadow col-span-2 sm:col-span-1 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="text-xs sm:text-sm opacity-60">Saldo</div>
+                  <div className={`text-base sm:text-xl font-bold ${totals.saldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(totals.saldo)}</div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Categorias em destaque - Responsivo */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6">
                 {CATEGORIES.filter(cat => cat.featured).map(cat => (
-                  <div key={cat.id} className={`p-3 rounded-lg text-white shadow ${darkMode ? cat.darkBgColor : cat.bgColor}`}><div className="flex justify-between text-sm font-medium"><span>{cat.name}</span><span>●</span></div><div className="text-lg font-bold mt-1">{currencyFormat(featuredTotals[cat.id]?.total || 0)}</div></div>
+                  <div key={cat.id} className={`p-3 rounded-lg text-white shadow ${darkMode ? cat.darkBgColor : cat.bgColor}`}>
+                    <div className="flex justify-between text-xs sm:text-sm font-medium">
+                      <span className="truncate">{cat.name}</span>
+                      <span>●</span>
+                    </div>
+                    <div className="text-sm sm:text-lg font-bold mt-1 truncate">{currencyFormat(featuredTotals[cat.id]?.total || 0)}</div>
+                  </div>
                 ))}
               </div>
 
+              {/* Seção de contas bancárias */}
               <div className={`p-4 rounded-lg shadow mb-6 transition-colors duration-200 ${getSectionColors('contas').bg} ${getSectionColors('contas').border} border`}>
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center space-x-2"><h2 className={`text-lg font-semibold ${getSectionColors('contas').text}`}>🏦 Contas</h2><button onClick={() => toggleSection('accounts')} className="text-sm">{sectionVisibility.accounts ? '▼' : '►'}</button></div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${accountsTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{currencyFormat(accountsTotal)}</span>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+                  <div className="flex items-center space-x-2">
+                    <h2 className={`text-base sm:text-lg font-semibold ${getSectionColors('contas').text}`}>🏦 Contas</h2>
+                    <button onClick={() => toggleSection('accounts')} className="text-sm">{sectionVisibility.accounts ? '▼' : '►'}</button>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${accountsTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{currencyFormat(accountsTotal)}</span>
                 </div>
                 {sectionVisibility.accounts && (
                   <>
                     <div className="space-y-2">
                       {accounts.map(a => (
-                        <div key={a.id} className={`flex justify-between items-center p-3 rounded border ${darkMode ? 'border-amber-700 hover:bg-amber-900/20' : 'border-amber-200 hover:bg-amber-100'}`}>
-                          <div className="flex items-center space-x-2"><span>{a.name}</span><button onClick={() => viewAccountHistory(a)} className="opacity-50 hover:opacity-100"><HistoryIcon /></button></div>
-                          <div className="flex items-center space-x-2"><span className={`font-medium ${Number(a.monthlyBalances?.[selectedMonthKey]||0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(a.monthlyBalances?.[selectedMonthKey]||0)}</span><button onClick={() => startEditAccount(a)}>✏️</button><button onClick={() => deleteAccount(a)}>🗑️</button><button onClick={() => copyBalanceFromPreviousMonth(a)} title="Copiar mês anterior">📋</button></div>
+                        <div key={a.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded border ${darkMode ? 'border-amber-700 hover:bg-amber-900/20' : 'border-amber-200 hover:bg-amber-100'} mobile-space-y-2`}>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm-responsive">{a.name}</span>
+                            <button onClick={() => viewAccountHistory(a)} className="opacity-50 hover:opacity-100 touch-target"><HistoryIcon /></button>
+                          </div>
+                          <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+                            <span className={`font-medium text-sm-responsive ${Number(a.monthlyBalances?.[selectedMonthKey]||0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(a.monthlyBalances?.[selectedMonthKey]||0)}</span>
+                            <div className="flex space-x-1">
+                              <button onClick={() => startEditAccount(a)} className="touch-target">✏️</button>
+                              <button onClick={() => deleteAccount(a)} className="touch-target">🗑️</button>
+                              <button onClick={() => copyBalanceFromPreviousMonth(a)} className="touch-target" title="Copiar mês anterior">📋</button>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
-                    <button onClick={() => { setShowAddAccount(true); setEditingAccount(null); setFormAccount({ name:'', balance:'' }); }} className={`mt-3 w-full py-2 rounded-lg border-2 border-dashed flex items-center justify-center space-x-2 ${darkMode ? 'border-amber-600 hover:bg-amber-900/20' : 'border-amber-300 hover:bg-amber-100'}`}><Plus /><span>Adicionar Conta</span></button>
+                    <button onClick={() => { setShowAddAccount(true); setEditingAccount(null); setFormAccount({ name:'', balance:'' }); }} className={`mt-3 w-full py-2 rounded-lg border-2 border-dashed flex items-center justify-center space-x-2 ${darkMode ? 'border-amber-600 hover:bg-amber-900/20' : 'border-amber-300 hover:bg-amber-100'} touch-target`}><Plus /><span>Adicionar Conta</span></button>
                   </>
                 )}
               </div>
 
+              {/* Barra de busca e filtros */}
               <div className={`p-4 rounded-lg shadow mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
-                  <input type="text" placeholder="🔍 Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className={`flex-1 px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`} />
-                  <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}><option value="all">Todas</option>{CATEGORIES.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}</select>
-                  <button onClick={() => setShowFixedAccounts(!showFixedAccounts)} className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}`}>{showFixedAccounts ? 'Ocultar Fixas' : 'Ver Fixas'}</button>
+                <div className="flex flex-col space-y-3">
+                  <input type="text" placeholder="🔍 Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className={`flex-1 px-4 py-2 rounded-lg border text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`} />
+                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                    <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={`px-4 py-2 rounded-lg border text-base ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}>
+                      <option value="all">Todas</option>
+                      {CATEGORIES.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                    </select>
+                    <button onClick={() => setShowFixedAccounts(!showFixedAccounts)} className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} touch-target`}>{showFixedAccounts ? 'Ocultar Fixas' : 'Ver Fixas'}</button>
+                  </div>
                 </div>
               </div>
 
+              {/* Quinzenas - Layout responsivo */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {['first', 'second'].map((quinzena, idx) => {
                   const pays = groupByQuinzena(filteredPayments())[quinzena];
@@ -2823,7 +3843,13 @@ if ('serviceWorker' in navigator) {
                   const colors = getSectionColors(section);
                   return (
                     <div key={quinzena} className={`rounded-lg shadow border ${colors.bg} ${colors.border}`}>
-                      <div className={`p-4 rounded-t-lg ${colors.header} text-white flex justify-between items-center`}><div className="flex items-center space-x-2"><h3 className="font-semibold">{idx === 0 ? '1ª Quinzena' : '2ª Quinzena'}</h3><button onClick={() => toggleSection(section)}>{sectionVisibility[section] ? '▼' : '►'}</button></div><span className="font-bold">{currencyFormat(total)}</span></div>
+                      <div className={`p-4 rounded-t-lg ${colors.header} text-white flex justify-between items-center`}>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold text-sm-responsive">{idx === 0 ? '1ª Quinzena' : '2ª Quinzena'}</h3>
+                          <button onClick={() => toggleSection(section)}>{sectionVisibility[section] ? '▼' : '►'}</button>
+                        </div>
+                        <span className="font-bold text-sm-responsive">{currencyFormat(total)}</span>
+                      </div>
                       {sectionVisibility[section] && (
                         <div className="p-4 space-y-3">
                           {(() => {
@@ -2844,18 +3870,18 @@ if ('serviceWorker' in navigator) {
                                       }}
                                     >
                                       <div className="flex items-center space-x-3">
-                                        <button onClick={() => toggleCardPaid(group.cardId, selectedMonthKey)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${group.allPaid ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>
+                                        <button onClick={() => toggleCardPaid(group.cardId, selectedMonthKey)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${group.allPaid ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'} touch-target`}>
                                           {group.allPaid && '✓'}
                                         </button>
                                         <div>
                                           <div className="flex items-center space-x-2">
                                             <div className="card-color-dot" style={{ backgroundColor: group.color }}></div>
-                                            <div className="font-medium text-gray-800 dark:text-gray-200">Fatura {group.cardName}</div>
+                                            <div className="font-medium text-gray-800 dark:text-gray-200 text-sm-responsive">Fatura {group.cardName}</div>
                                           </div>
                                           <div className="text-xs text-gray-800 dark:text-gray-200">Vence dia {group.dueDay}</div>
                                         </div>
                                       </div>
-                                      <span className="font-medium text-gray-800 dark:text-gray-200">{currencyFormat(group.total)}</span>
+                                      <span className="font-medium text-gray-800 dark:text-gray-200 text-sm-responsive">{currencyFormat(group.total)}</span>
                                     </div>
                                   );
                                 })}
@@ -2864,12 +3890,12 @@ if ('serviceWorker' in navigator) {
                                   return (
                                     <div key={p.id} className={`flex items-center justify-between p-3 rounded border ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${p.paid ? 'opacity-60' : ''}`}>
                                       <div className="flex items-center space-x-3">
-                                        <button onClick={() => togglePaid(p)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${p.paid ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>
+                                        <button onClick={() => togglePaid(p)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${p.paid ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'} touch-target`}>
                                           {p.paid && '✓'}
                                         </button>
                                         <div className="flex-1 min-w-0">
-                                          <div className="font-medium truncate text-gray-800 dark:text-gray-200">{p.title}</div>
-                                          <div className="text-sm opacity-70 flex items-center space-x-2">
+                                          <div className="font-medium truncate text-gray-800 dark:text-gray-200 text-sm-responsive">{p.title}</div>
+                                          <div className="text-xs opacity-70 flex items-center space-x-2">
                                             <span className="text-gray-800 dark:text-gray-200">{formatDateDisplay(p.dueDateIso)}</span>
                                             <span style={{ color: cat.color }}>● {cat.name}</span>
                                           </div>
@@ -2881,9 +3907,9 @@ if ('serviceWorker' in navigator) {
                                         </div>
                                       </div>
                                       <div className="flex items-center space-x-2">
-                                        <span className="font-medium text-gray-800 dark:text-gray-200">{currencyFormat(p.amount)}</span>
-                                        <button onClick={() => startEditPayment(p)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">✏️</button>
-                                        <button onClick={() => deletePayment(p)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">🗑️</button>
+                                        <span className="font-medium text-gray-800 dark:text-gray-200 text-sm-responsive">{currencyFormat(p.amount)}</span>
+                                        <button onClick={() => startEditPayment(p)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded touch-target">✏️</button>
+                                        <button onClick={() => deletePayment(p)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded touch-target">🗑️</button>
                                       </div>
                                     </div>
                                   );
@@ -2901,29 +3927,54 @@ if ('serviceWorker' in navigator) {
               {showFixedAccounts && sectionVisibility.fixedAccounts && (
                 <div className={`p-4 rounded-lg shadow mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   <h2 className="text-lg font-semibold mb-4">🔄 Contas Fixas</h2>
-                  <div className="space-y-3">{templatesFixed.map(tpl => (<div key={tpl.id} className={`flex items-center justify-between p-3 rounded border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}><div><div className="font-medium">{tpl.title}</div><div className="text-sm opacity-70">Dia {tpl.day} • {currencyFormat(tpl.amount)}</div></div><button onClick={() => deletePayment({ templateId: tpl.id })}>🗑️</button></div>))}</div>
+                  <div className="space-y-3">{templatesFixed.map(tpl => (<div key={tpl.id} className={`flex items-center justify-between p-3 rounded border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}><div><div className="font-medium text-sm-responsive">{tpl.title}</div><div className="text-xs sm:text-sm opacity-70">Dia {tpl.day} • {currencyFormat(tpl.amount)}</div></div><button onClick={() => deletePayment({ templateId: tpl.id })} className="touch-target">🗑️</button></div>))}</div>
                 </div>
               )}
 
+              {/* Seção de entradas */}
               <div className={`p-4 rounded-lg shadow mb-6 border ${getSectionColors('entradas').bg} ${getSectionColors('entradas').border}`}>
-                <div className="flex justify-between items-center mb-4"><div className="flex items-center space-x-2"><h2 className={`text-lg font-semibold ${getSectionColors('entradas').text}`}>💰 Entradas</h2><button onClick={() => toggleSection('entries')}>{sectionVisibility.entries ? '▼' : '►'}</button></div></div>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center space-x-2">
+                    <h2 className={`text-base sm:text-lg font-semibold ${getSectionColors('entradas').text}`}>💰 Entradas</h2>
+                    <button onClick={() => toggleSection('entries')}>{sectionVisibility.entries ? '▼' : '►'}</button>
+                  </div>
+                </div>
                 {sectionVisibility.entries && (
                   <>
-                    <div className="space-y-3">{getEntriesForMonth(selectedMonthKey).map(e => (<div key={e.id} className={`flex justify-between p-3 rounded border ${darkMode ? 'border-green-700' : 'border-green-200'}`}><div><div className="font-medium">{e.name}</div><div className="text-sm opacity-70">{formatDateDisplay(e.date)}</div></div><div className="flex items-center space-x-2"><span className="text-green-500">{currencyFormat(e.amount)}</span><button onClick={() => startEditEntry(e)}>✏️</button><button onClick={() => deleteEntry(e)}>🗑️</button></div></div>))}</div>
-                    <button onClick={() => { setShowAddEntry(true); setEditingEntry(null); setFormEntry({ name:'', amount:'', date:'', notes:'' }); }} className={`mt-3 w-full py-2 rounded-lg border-2 border-dashed flex justify-center space-x-2 ${darkMode ? 'border-green-600 hover:bg-green-900/20' : 'border-green-300 hover:bg-green-100'}`}><Plus /><span>Adicionar Entrada</span></button>
+                    <div className="space-y-3">
+                      {getEntriesForMonth(selectedMonthKey).map(e => (
+                        <div key={e.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded border ${darkMode ? 'border-green-700' : 'border-green-200'} mobile-space-y-2`}>
+                          <div>
+                            <div className="font-medium text-sm-responsive">{e.name}</div>
+                            <div className="text-xs sm:text-sm opacity-70">{formatDateDisplay(e.date)}</div>
+                          </div>
+                          <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+                            <span className="text-green-500 text-sm-responsive">{currencyFormat(e.amount)}</span>
+                            <div className="flex space-x-2">
+                              <button onClick={() => startEditEntry(e)} className="touch-target">✏️</button>
+                              <button onClick={() => deleteEntry(e)} className="touch-target">🗑️</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => { setShowAddEntry(true); setEditingEntry(null); setFormEntry({ name:'', amount:'', date:'', notes:'' }); }} className={`mt-3 w-full py-2 rounded-lg border-2 border-dashed flex justify-center space-x-2 ${darkMode ? 'border-green-600 hover:bg-green-900/20' : 'border-green-300 hover:bg-green-100'} touch-target`}>
+                      <Plus /><span>Adicionar Entrada</span>
+                    </button>
                   </>
                 )}
               </div>
 
+              {/* Seção de reservas */}
               <div className={`p-4 rounded-lg shadow mb-6 border ${getSectionColors('reservas').bg} ${getSectionColors('reservas').border}`}>
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
                   <div className="flex items-center space-x-2">
-                    <h2 className={`text-lg font-semibold ${getSectionColors('reservas').text}`}>🎯 Reservas</h2>
+                    <h2 className={`text-base sm:text-lg font-semibold ${getSectionColors('reservas').text}`}>🎯 Reservas</h2>
                     <button onClick={() => toggleSection('reservations')}>
                       {sectionVisibility.reservations ? '▼' : '►'}
                     </button>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${darkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${darkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'}`}>
                     {currencyFormat(reservations.reduce((sum, r) => sum + Number(r.amount || 0), 0))}
                   </span>
                 </div>
@@ -2931,20 +3982,22 @@ if ('serviceWorker' in navigator) {
                   <>
                     <div className="space-y-3">
                       {reservations.map(r => (
-                        <div key={r.id} className={`flex justify-between p-3 rounded border ${darkMode ? 'border-blue-700' : 'border-blue-200'}`}>
+                        <div key={r.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded border ${darkMode ? 'border-blue-700' : 'border-blue-200'} mobile-space-y-2`}>
                           <div>
-                            <div className="font-medium">{r.name}</div>
-                            <div className="text-sm opacity-70">{formatDateDisplay(r.date)}</div>
+                            <div className="font-medium text-sm-responsive">{r.name}</div>
+                            <div className="text-xs sm:text-sm opacity-70">{formatDateDisplay(r.date)}</div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-blue-500">{currencyFormat(r.amount)}</span>
-                            <button onClick={() => startEditReservation(r)}>✏️</button>
-                            <button onClick={() => deleteReservation(r)}>🗑️</button>
+                          <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-start">
+                            <span className="text-blue-500 text-sm-responsive">{currencyFormat(r.amount)}</span>
+                            <div className="flex space-x-2">
+                              <button onClick={() => startEditReservation(r)} className="touch-target">✏️</button>
+                              <button onClick={() => deleteReservation(r)} className="touch-target">🗑️</button>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <button onClick={() => { setShowAddReservation(true); setEditingReservation(null); setFormReservation({ name:'', amount:'', date:'', notes:'' }); }} className={`mt-3 w-full py-2 rounded-lg border-2 border-dashed flex justify-center space-x-2 ${darkMode ? 'border-blue-600 hover:bg-blue-900/20' : 'border-blue-300 hover:bg-blue-100'}`}>
+                    <button onClick={() => { setShowAddReservation(true); setEditingReservation(null); setFormReservation({ name:'', amount:'', date:'', notes:'' }); }} className={`mt-3 w-full py-2 rounded-lg border-2 border-dashed flex justify-center space-x-2 ${darkMode ? 'border-blue-600 hover:bg-blue-900/20' : 'border-blue-300 hover:bg-blue-100'} touch-target`}>
                       <Plus /><span>Adicionar Reserva</span>
                     </button>
                   </>
@@ -2953,36 +4006,48 @@ if ('serviceWorker' in navigator) {
             </main>
           )}
 
-         {!showCreditCards && (
-  <div className="fixed bottom-6 right-6">
-    <button onClick={() => { setShowAddPayment(true); setEditingPayment(null); setFormPayment({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '' }); }} className={`p-4 rounded-full shadow-lg text-white ${darkMode ? 'bg-blue-600' : 'bg-blue-500'}`}><Plus /></button>
-  </div>
-)}
+          {/* Botão flutuante para adicionar pagamento */}
+          {!showCreditCards && (
+            <div className="fixed bottom-6 right-6 z-10">
+              <button 
+                onClick={() => { 
+                  setShowAddPayment(true); 
+                  setEditingPayment(null); 
+                  setFormPayment({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '' }); 
+                }} 
+                className={`p-4 rounded-full shadow-lg text-white ${darkMode ? 'bg-blue-600' : 'bg-blue-500'} touch-target`}
+              >
+                <Plus />
+              </button>
+            </div>
+          )}
 
+          {/* Modal de senha */}
           {showPasswordModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-sm p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-sm p-6 rounded-lg shadow-xl modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">{appPassword ? 'Alterar Senha' : 'Definir Senha'}</h2>
                 <div className="space-y-4">
-                  <input type="password" placeholder="Nova Senha" value={passwordForm.new} onChange={(e) => setPasswordForm(prev => ({ ...prev, new: e.target.value }))} className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
-                  <input type="password" placeholder="Confirmar Senha" value={passwordForm.confirm} onChange={(e) => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))} className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
+                  <input type="password" placeholder="Nova Senha" value={passwordForm.new} onChange={(e) => setPasswordForm(prev => ({ ...prev, new: e.target.value }))} className={`w-full px-3 py-3 rounded border text-base ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
+                  <input type="password" placeholder="Confirmar Senha" value={passwordForm.confirm} onChange={(e) => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))} className={`w-full px-3 py-3 rounded border text-base ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
                   {appPassword && <p className="text-xs text-yellow-600">Deixe em branco para remover a senha.</p>}
                 </div>
                 <div className="flex space-x-3 mt-6">
-                  <button onClick={handleSetPassword} className="flex-1 py-2 rounded-lg bg-blue-600 text-white">Salvar</button>
-                  <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-2 rounded-lg bg-gray-500 text-white">Cancelar</button>
+                  <button onClick={handleSetPassword} className="flex-1 py-3 rounded-lg bg-blue-600 text-white touch-target">Salvar</button>
+                  <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-lg bg-gray-500 text-white touch-target">Cancelar</button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Modal para adicionar/editar cartão de crédito */}
           {showAddCreditCard && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg shadow-xl modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">{editingCreditCard ? 'Editar Cartão' : 'Adicionar Cartão'}</h2>
                 <div className="space-y-3">
-                  <input type="text" placeholder="Nome do Cartão (Ex: Visa Nubank)" value={formCreditCard.name} onChange={e => setFormCreditCard({ ...formCreditCard, name: e.target.value })} className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} />
-                  <input type="number" placeholder="Dia de Vencimento da Fatura" value={formCreditCard.dueDay} onChange={e => setFormCreditCard({ ...formCreditCard, dueDay: e.target.value })} className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} min="1" max="31" />
+                  <input type="text" placeholder="Nome do Cartão (Ex: Visa Nubank)" value={formCreditCard.name} onChange={e => setFormCreditCard({ ...formCreditCard, name: e.target.value })} className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} />
+                  <input type="number" placeholder="Dia de Vencimento da Fatura" value={formCreditCard.dueDay} onChange={e => setFormCreditCard({ ...formCreditCard, dueDay: e.target.value })} className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} min="1" max="31" />
                   
                   <ColorPicker 
                     selectedColor={formCreditCard.color} 
@@ -2990,16 +4055,17 @@ if ('serviceWorker' in navigator) {
                   />
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button onClick={editingCreditCard ? updateCreditCard : addCreditCard} className="flex-1 bg-purple-600 text-white py-2 rounded">Salvar</button>
-                  <button onClick={() => { setShowAddCreditCard(false); setEditingCreditCard(null); setFormCreditCard({ name: '', dueDay: '', color: CARD_COLORS[0] }); }} className="flex-1 bg-gray-500 text-white py-2 rounded">Cancelar</button>
+                  <button onClick={editingCreditCard ? updateCreditCard : addCreditCard} className="flex-1 bg-purple-600 text-white py-3 rounded touch-target">Salvar</button>
+                  <button onClick={() => { setShowAddCreditCard(false); setEditingCreditCard(null); setFormCreditCard({ name: '', dueDay: '', color: CARD_COLORS[0] }); }} className="flex-1 bg-gray-500 text-white py-3 rounded touch-target">Cancelar</button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Modal para adicionar/editar compra parcelada */}
           {showAddCreditPurchase && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg shadow-xl modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">
                   {editingCreditPurchase ? 'Editar Compra Parcelada' : 'Adicionar Compra Parcelada'}
                 </h2>
@@ -3009,27 +4075,27 @@ if ('serviceWorker' in navigator) {
                     placeholder="Descrição da Compra" 
                     value={formCreditPurchase.title} 
                     onChange={e => setFormCreditPurchase({ ...formCreditPurchase, title: e.target.value })} 
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} 
+                    className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} 
                   />
                   <input 
                     type="text" 
                     placeholder="Valor Total da Compra" 
                     value={formCreditPurchase.totalAmount} 
                     onChange={e => setFormCreditPurchase({ ...formCreditPurchase, totalAmount: e.target.value })} 
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} 
+                    className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} 
                   />
                   <input 
                     type="number" 
                     placeholder="Número de Parcelas" 
                     value={formCreditPurchase.installmentCount} 
                     onChange={e => setFormCreditPurchase({ ...formCreditPurchase, installmentCount: e.target.value })} 
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} 
+                    className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} 
                     min="1" 
                   />
                   <select 
                     value={formCreditPurchase.cardId} 
                     onChange={e => setFormCreditPurchase({ ...formCreditPurchase, cardId: e.target.value })} 
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}
+                    className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}
                   >
                     <option value="">Selecione o Cartão</option>
                     {creditCards.map(card => (
@@ -3041,7 +4107,7 @@ if ('serviceWorker' in navigator) {
                   <select 
                     value={formCreditPurchase.firstDueMonth} 
                     onChange={e => setFormCreditPurchase({ ...formCreditPurchase, firstDueMonth: e.target.value })} 
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}
+                    className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}
                   >
                     <option value={selectedMonthKey}>Mês de Início (Fatura Atual)</option>
                   </select>
@@ -3049,7 +4115,7 @@ if ('serviceWorker' in navigator) {
                 <div className="mt-4 flex space-x-2">
                   <button 
                     onClick={editingCreditPurchase ? updateCreditPurchase : addCreditPurchase} 
-                    className="flex-1 bg-blue-600 text-white py-2 rounded"
+                    className="flex-1 bg-blue-600 text-white py-3 rounded touch-target"
                   >
                     {editingCreditPurchase ? 'Atualizar Compra' : 'Adicionar Compra'}
                   </button>
@@ -3059,7 +4125,7 @@ if ('serviceWorker' in navigator) {
                       setEditingCreditPurchase(null);
                       setFormCreditPurchase({ title: '', totalAmount: '', installmentCount: '', firstDueMonth: selectedMonthKey, cardId: '', category: 'cartao' });
                     }} 
-                    className="flex-1 bg-gray-500 text-white py-2 rounded"
+                    className="flex-1 bg-gray-500 text-white py-3 rounded touch-target"
                   >
                     Cancelar
                   </button>
@@ -3068,9 +4134,10 @@ if ('serviceWorker' in navigator) {
             </div>
           )}
 
+          {/* Modal para adicionar/editar pagamento */}
           {showAddPayment && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">{editingPayment ? 'Editar Pagamento' : 'Adicionar Pagamento'}</h2>
                 <div className="space-y-3">
                   <input 
@@ -3078,7 +4145,7 @@ if ('serviceWorker' in navigator) {
                     placeholder="Nome da conta" 
                     value={formPayment.title} 
                     onChange={e=>setFormPayment({...formPayment,title:e.target.value})} 
-                    className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}
+                    className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}
                   />
                   
                   <div>
@@ -3096,7 +4163,7 @@ if ('serviceWorker' in navigator) {
                           calculatedResult: result !== '' ? result : ''
                         }));
                       }} 
-                      className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}
+                      className={`w-full p-3 border rounded text-base ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}
                     />
                     
                     {formPayment.calculatedResult !== '' && formPayment.calculatedResult !== undefined && 
@@ -3122,17 +4189,17 @@ if ('serviceWorker' in navigator) {
                     placeholder="Dia do vencimento" 
                     value={formPayment.day} 
                     onChange={e=>setFormPayment({...formPayment,day:e.target.value})} 
-                    className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}
+                    className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}
                   />
                   <select 
                     value={formPayment.category} 
                     onChange={e=>setFormPayment({...formPayment,category:e.target.value})} 
-                    className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}
+                    className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}
                   >
                     {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                   
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     <label className="flex items-center">
                       <input 
                         type="radio" 
@@ -3153,7 +4220,7 @@ if ('serviceWorker' in navigator) {
                     </label>
                   </div>
                   
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     <label className="flex items-center">
                       <input 
                         type="radio" 
@@ -3181,18 +4248,18 @@ if ('serviceWorker' in navigator) {
                       value={formPayment.notes} 
                       onChange={e=>setFormPayment({...formPayment,notes:e.target.value})} 
                       rows="3"
-                      className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}
+                      className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}
                     />
                   </div>
                 </div>
                 <div className="mt-6 flex space-x-2">
-                  <button onClick={editingPayment?updatePayment:addPayment} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition-colors">
+                  <button onClick={editingPayment?updatePayment:addPayment} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors touch-target">
                     {editingPayment ? 'Atualizar' : 'Salvar'}
                   </button>
                   <button onClick={()=>{
                     setShowAddPayment(false);
                     setFormPayment({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '' });
-                  }} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg font-medium transition-colors">
+                  }} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors touch-target">
                     Cancelar
                   </button>
                 </div>
@@ -3200,65 +4267,69 @@ if ('serviceWorker' in navigator) {
             </div>
           )}
           
+          {/* Modal para adicionar/editar entrada */}
           {showAddEntry && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">{editingEntry?'Editar':'Adicionar'} Entrada</h2>
                 <div className="space-y-3">
-                  <input type="text" placeholder="Nome" value={formEntry.name} onChange={e=>setFormEntry({...formEntry,name:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="text" placeholder="Valor" value={formEntry.amount} onChange={e=>setFormEntry({...formEntry,amount:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="date" value={formEntry.date} onChange={e=>setFormEntry({...formEntry,date:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Nome" value={formEntry.name} onChange={e=>setFormEntry({...formEntry,name:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Valor" value={formEntry.amount} onChange={e=>setFormEntry({...formEntry,amount:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="date" value={formEntry.date} onChange={e=>setFormEntry({...formEntry,date:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button onClick={editingEntry?updateEntry:addEntry} className="flex-1 bg-green-600 text-white py-2 rounded">Salvar</button>
-                  <button onClick={()=>setShowAddEntry(false)} className="flex-1 bg-gray-500 text-white py-2 rounded">Cancelar</button>
+                  <button onClick={editingEntry?updateEntry:addEntry} className="flex-1 bg-green-600 text-white py-3 rounded touch-target">Salvar</button>
+                  <button onClick={()=>setShowAddEntry(false)} className="flex-1 bg-gray-500 text-white py-3 rounded touch-target">Cancelar</button>
                 </div>
               </div>
             </div>
           )}
           
+          {/* Modal para adicionar/editar reserva */}
           {showAddReservation && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">{editingReservation?'Editar':'Adicionar'} Reserva</h2>
                 <div className="space-y-3">
-                  <input type="text" placeholder="Nome" value={formReservation.name} onChange={e=>setFormReservation({...formReservation,name:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="text" placeholder="Valor" value={formReservation.amount} onChange={e=>setFormReservation({...formReservation,amount:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="date" value={formReservation.date} onChange={e=>setFormReservation({...formReservation,date:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Nome" value={formReservation.name} onChange={e=>setFormReservation({...formReservation,name:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Valor" value={formReservation.amount} onChange={e=>setFormReservation({...formReservation,amount:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="date" value={formReservation.date} onChange={e=>setFormReservation({...formReservation,date:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button onClick={editingReservation?updateReservation:addReservation} className="flex-1 bg-blue-600 text-white py-2 rounded">Salvar</button>
-                  <button onClick={()=>setShowAddReservation(false)} className="flex-1 bg-gray-500 text-white py-2 rounded">Cancelar</button>
+                  <button onClick={editingReservation?updateReservation:addReservation} className="flex-1 bg-blue-600 text-white py-3 rounded touch-target">Salvar</button>
+                  <button onClick={()=>setShowAddReservation(false)} className="flex-1 bg-gray-500 text-white py-3 rounded touch-target">Cancelar</button>
                 </div>
               </div>
             </div>
           )}
           
+          {/* Modal para adicionar/editar conta */}
           {showAddAccount && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">{editingAccount?'Editar':'Adicionar'} Conta</h2>
                 <div className="space-y-3">
-                  <input type="text" placeholder="Nome" value={formAccount.name} onChange={e=>setFormAccount({...formAccount,name:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="text" placeholder="Saldo Mês Atual" value={formAccount.balance} onChange={e=>setFormAccount({...formAccount,balance:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Nome" value={formAccount.name} onChange={e=>setFormAccount({...formAccount,name:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Saldo Mês Atual" value={formAccount.balance} onChange={e=>setFormAccount({...formAccount,balance:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button onClick={editingAccount?updateAccount:addAccount} className="flex-1 bg-blue-600 text-white py-2 rounded">Salvar</button>
-                  <button onClick={()=>setShowAddAccount(false)} className="flex-1 bg-gray-500 text-white py-2 rounded">Cancelar</button>
+                  <button onClick={editingAccount?updateAccount:addAccount} className="flex-1 bg-blue-600 text-white py-3 rounded touch-target">Salvar</button>
+                  <button onClick={()=>setShowAddAccount(false)} className="flex-1 bg-gray-500 text-white py-3 rounded touch-target">Cancelar</button>
                 </div>
               </div>
             </div>
           )}
           
+          {/* Modal para adicionar parcelamento */}
           {showAddInstallment && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className={`w-full max-w-md p-6 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`w-full max-w-md p-6 rounded-lg modal-content ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <h2 className="text-xl font-bold mb-4">Parcelamento</h2>
                 <div className="space-y-3">
-                  <input type="text" placeholder="Nome" value={formInstallment.title} onChange={e=>setFormInstallment({...formInstallment,title:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="text" placeholder="Valor Total" value={formInstallment.totalAmount} onChange={e=>setFormInstallment({...formInstallment,totalAmount:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="number" placeholder="Qtd Parcelas" value={formInstallment.installmentCount} onChange={e=>setFormInstallment({...formInstallment,installmentCount:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
-                  <input type="number" placeholder="Dia Venc." value={formInstallment.firstDueDay} onChange={e=>setFormInstallment({...formInstallment,firstDueDay:e.target.value})} className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Nome" value={formInstallment.title} onChange={e=>setFormInstallment({...formInstallment,title:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Valor Total" value={formInstallment.totalAmount} onChange={e=>setFormInstallment({...formInstallment,totalAmount:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="number" placeholder="Qtd Parcelas" value={formInstallment.installmentCount} onChange={e=>setFormInstallment({...formInstallment,installmentCount:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="number" placeholder="Dia Venc." value={formInstallment.firstDueDay} onChange={e=>setFormInstallment({...formInstallment,firstDueDay:e.target.value})} className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
                   
                   <div>
                     <label className="block text-sm font-medium mb-1">Observações (opcional)</label>
@@ -3267,13 +4338,13 @@ if ('serviceWorker' in navigator) {
                       value={formInstallment.notes} 
                       onChange={e=>setFormInstallment({...formInstallment,notes:e.target.value})} 
                       rows="2"
-                      className={`w-full p-2 border rounded ${darkMode?'bg-gray-700 border-gray-600':''}`}
+                      className={`w-full p-3 border rounded text-base ${darkMode?'bg-gray-700 border-gray-600':''}`}
                     />
                   </div>
                 </div>
                 <div className="mt-4 flex space-x-2">
-                  <button onClick={addInstallment} className="flex-1 bg-blue-600 text-white py-2 rounded">Salvar</button>
-                  <button onClick={()=>setShowAddInstallment(false)} className="flex-1 bg-gray-500 text-white py-2 rounded">Cancelar</button>
+                  <button onClick={addInstallment} className="flex-1 bg-blue-600 text-white py-3 rounded touch-target">Salvar</button>
+                  <button onClick={()=>setShowAddInstallment(false)} className="flex-1 bg-gray-500 text-white py-3 rounded touch-target">Cancelar</button>
                 </div>
               </div>
             </div>
@@ -3299,43 +4370,16 @@ if ('serviceWorker' in navigator) {
             />
           )}
 
-          {notification.show && <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${notification.type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white`}>{notification.text}</div>}
+          {/* Notificação */}
+          {notification.show && (
+            <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${notification.type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white`}>
+              {notification.text}
+            </div>
+          )}
         </div>
       );
     }
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
-
-<script>
-async function hashSenha(senha) {
-  const enc = new TextEncoder().encode(senha);
-  const hash = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Backup
-function exportarBackup() {
-  const data = JSON.stringify(localStorage);
-  const blob = new Blob([data], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "backup-financas.json";
-  a.click();
-}
-
-function importarBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = JSON.parse(e.target.result);
-    localStorage.clear();
-    for (const k in data) localStorage.setItem(k, data[k]);
-    alert("Backup restaurado. Recarregue a página.");
-  };
-  reader.readAsText(file);
-}
-</script>
-
 </body>
 </html>
