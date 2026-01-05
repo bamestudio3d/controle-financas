@@ -1,25 +1,27 @@
 {
-  "name": "Controle de Finanças",
+  "name": "Finanças - Controle Financeiro",
   "short_name": "Finanças",
-  "start_url": "./index.html",
+  "description": "Aplicativo de controle financeiro pessoal com estilo Nubank",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#2563eb",
-  "description": "Aplicativo de controle financeiro pessoal",
+  "background_color": "#0b0f1a",
+  "theme_color": "#8A05BE",
   "orientation": "portrait",
   "icons": [
-    { 
-      "src": "./icon-192.png", 
-      "sizes": "192x192", 
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
-    { 
-      "src": "./icon-512.png", 
-      "sizes": "512x512", 
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "productivity", "utilities"]
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "pt-BR",
+  "dir": "ltr"
 }
