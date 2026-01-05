@@ -1,953 +1,541 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Finanças • Controle Financeiro Pessoal</title>
+/* ===== ESTILO MOBILE – NUBANK / INTER ===== */
+:root {
+  --bg-main: #0b0f1a;
+  --bg-card: #111827;
+  --primary: #8b5cf6;
+  --primary-soft: #a78bfa;
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
+  --gradient-primary: linear-gradient(135deg, #8A05BE, #E0209B);
+  --border-radius: 16px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Containers */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.card {
+  background-color: var(--bg-card);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Botões */
+button {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+button.danger {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+/* Inputs */
+input, select, textarea {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 16px;
+  font-size: 16px;
+  font-family: inherit;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Cabeçalhos */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+/* Listas */
+ul, ol {
+  padding-left: 20px;
+  margin-bottom: 16px;
+}
+
+li {
+  margin-bottom: 8px;
+}
+
+/* Tabelas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+th {
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Modais */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 12px;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Flex */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.gap-8 { gap: 32px; }
+
+/* Espaçamentos */
+.p-4 { padding: 16px; }
+.p-6 { padding: 24px; }
+.m-4 { margin: 16px; }
+.m-6 { margin: 24px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.mb-6 { margin-bottom: 24px; }
+
+/* Texto */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-sm { font-size: 14px; }
+.text-xs { font-size: 12px; }
+.text-muted { color: var(--text-muted); }
+.text-primary { color: var(--primary); }
+.text-success { color: #10b981; }
+.text-warning { color: #f59e0b; }
+.text-danger { color: #ef4444; }
+
+/* Cores de fundo */
+.bg-success { background: rgba(16, 185, 129, 0.1); }
+.bg-warning { background: rgba(245, 158, 11, 0.1); }
+.bg-danger { background: rgba(239, 68, 68, 0.1); }
+
+/* Status */
+.status-paid {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  display: inline-block;
+}
+
+.status-pending {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  display: inline-block;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
   
-  <!-- PWA Meta Tags -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Finanças">
-  <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="icon" type="image/png" href="./icon-192.png">
+  .card {
+    padding: 16px;
+  }
   
-  <!-- CSS -->
-  <link rel="stylesheet" href="estilo-nubank.css">
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
   
-  <!-- React e dependências -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  .modal {
+    margin: 0 12px;
+  }
   
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 18px; }
   
-  <!-- jspdf e Chart.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  button, input, select, textarea {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 16px;
+  }
   
-  <!-- Estilos customizados -->
-  <style>
-    * {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    
-    body {
-      background: var(--bg-main, #0C0C0C);
-      color: var(--text-main, white);
-      margin: 0;
-      padding: 0;
-    }
-    
-    .nubank-card {
-      background: linear-gradient(135deg, #8A05BE, #E0209B);
-      border-radius: 20px;
-      padding: 16px;
-      box-shadow: 0 8px 32px rgba(138, 5, 190, 0.3);
-    }
-    
-    .card-modern {
-      background: var(--bg-card, #1A1A1A);
-      border-radius: 16px;
-      padding: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #8A05BE, #E0209B);
-      color: white;
-      border: none;
-      border-radius: 100px;
-      font-weight: 600;
-      padding: 12px 24px;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    
-    .btn-primary:hover {
-      opacity: 0.9;
-    }
-    
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 100px;
-      font-weight: 500;
-      padding: 12px 24px;
-      cursor: pointer;
-    }
-    
-    .input-modern {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      color: white;
-      padding: 12px 16px;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    
-    .input-modern:focus {
-      outline: none;
-      border-color: #8A05BE;
-    }
-    
-    .glass-effect {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Animações */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes slideInRight {
-      from { transform: translateX(100%); }
-      to { transform: translateX(0); }
-    }
-    
-    .fade-in {
-      animation: fadeIn 0.3s ease-out;
-    }
-    
-    .slide-in-right {
-      animation: slideInRight 0.3s ease-out;
-    }
-    
-    /* Ajustes para mobile */
-    @media (max-width: 640px) {
-      .hide-on-mobile {
-        display: none;
-      }
-    }
-    
-    /* Scrollbar customizada */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: #8A05BE;
-      border-radius: 3px;
-    }
-    
-    /* Animações e estilos gerais (do segundo bloco) */
-    .fade-in { animation: fadeIn 0.5s ease-in; }
-    
-    /* Estilos responsivos para mobile */
-    @media (max-width: 640px) {
-      .mobile-col { flex-direction: column; }
-      .mobile-text-sm { font-size: 0.875rem; }
-      .mobile-p-2 { padding: 0.5rem; }
-      .mobile-w-full { width: 100%; }
-      .mobile-space-y-2 > * + * { margin-top: 0.5rem; }
-      .mobile-hidden { display: none; }
-      .mobile-flex-col { flex-direction: column; }
-      .mobile-text-center { text-align: center; }
-    }
-    
-    /* Melhorias de toque para mobile */
-    button, input, select, textarea {
-      touch-action: manipulation;
-    }
-    
-    .touch-target {
-      min-height: 44px;
-      min-width: 44px;
-    }
-    
-    /* Ajustes de scroll para modal mobile */
-    .modal-content {
-      max-height: 85vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    /* Prevenir zoom em inputs no iOS */
-    @media (max-width: 768px) {
-      input, select, textarea {
-        font-size: 16px !important;
-      }
-    }
-    
-    /* Estilos para cores dos cartões */
-    .card-color-dot {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 6px;
-      vertical-align: middle;
-    }
-    
-    /* Estilos para o modal de PDF */
-    .pdf-modal {
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    
-    /* Ajuste para telas muito pequenas */
-    @media (max-width: 360px) {
-      .text-xs-responsive {
-        font-size: 0.75rem;
-      }
-      .text-sm-responsive {
-        font-size: 0.8rem;
-      }
-    }
-  </style>
-  
-  <!-- Fontes -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Ícones Material -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-</head>
-<body>
-  <div id="root"></div>
+  button {
+    padding: 12px 20px;
+  }
+}
 
-  <script type="text/babel">
-    // Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(registration => {
-            console.log('Service Worker registrado com sucesso:', registration);
-          })
-          .catch(error => {
-            console.log('Falha ao registrar Service Worker:', error);
-          });
-      });
-    }
+/* Animações */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-    // ========== COMPONENTE PRINCIPAL ==========
-    function App() {
-      // Estados principais
-      const [payments, setPayments] = React.useState(() => {
-        try {
-          const saved = localStorage.getItem('financas_payments');
-          return saved ? JSON.parse(saved) : [];
-        } catch {
-          return [];
-        }
-      });
-      
-      const [selectedMonth, setSelectedMonth] = React.useState(() => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        return `${year}-${month}`;
-      });
-      
-      const [showAddModal, setShowAddModal] = React.useState(false);
-      const [editingPayment, setEditingPayment] = React.useState(null);
-      const [formData, setFormData] = React.useState({
-        title: '',
-        amount: '',
-        day: '',
-        category: 'outros',
-        paid: false,
-        notes: ''
-      });
-      
-      const [showMenu, setShowMenu] = React.useState(false);
-      const [notification, setNotification] = React.useState({
-        show: false,
-        text: '',
-        type: 'success'
-      });
+@keyframes slideIn {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 
-      // Efeitos
-      React.useEffect(() => {
-        localStorage.setItem('financas_payments', JSON.stringify(payments));
-      }, [payments]);
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
 
-      // Funções utilitárias
-      const formatCurrency = (value) => {
-        if (!value && value !== 0) return 'R$ 0,00';
-        return Number(value).toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        });
-      };
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
 
-      const parseCurrencyInput = (input) => {
-        if (!input) return 0;
-        // Remove tudo exceto números, vírgula e ponto
-        const cleaned = input.replace(/[^\d,.-]/g, '');
-        // Substitui vírgula por ponto para parseFloat
-        const normalized = cleaned.replace(',', '.');
-        const value = parseFloat(normalized);
-        return isNaN(value) ? 0 : value;
-      };
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 
-      const formatDate = (isoString) => {
-        if (!isoString) return '';
-        const date = new Date(isoString);
-        return date.toLocaleDateString('pt-BR');
-      };
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
 
-      const changeMonth = (direction) => {
-        const [year, month] = selectedMonth.split('-').map(Number);
-        const newDate = new Date(year, month - 1 + direction, 1);
-        const newYear = newDate.getFullYear();
-        const newMonth = String(newDate.getMonth() + 1).padStart(2, '0');
-        setSelectedMonth(`${newYear}-${newMonth}`);
-      };
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
 
-      const getMonthName = () => {
-        const [year, month] = selectedMonth.split('-').map(Number);
-        const date = new Date(year, month - 1, 1);
-        return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      };
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-soft);
+}
 
-      const getPaymentsForMonth = () => {
-        return payments.filter(payment => {
-          if (!payment.dueDate) return false;
-          const paymentDate = new Date(payment.dueDate);
-          const paymentMonth = `${paymentDate.getFullYear()}-${String(paymentDate.getMonth() + 1).padStart(2, '0')}`;
-          return paymentMonth === selectedMonth;
-        });
-      };
+/* Utilitários */
+.hidden { display: none; }
+.block { display: block; }
+.inline-block { display: inline-block; }
 
-      const getTotals = () => {
-        const monthPayments = getPaymentsForMonth();
-        const total = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        const paid = monthPayments.filter(p => p.paid).reduce((sum, p) => sum + (p.amount || 0), 0);
-        const pending = monthPayments.filter(p => !p.paid).reduce((sum, p) => sum + (p.amount || 0), 0);
-        
-        return { total, paid, pending };
-      };
+.rounded { border-radius: 8px; }
+.rounded-lg { border-radius: 16px; }
+.rounded-full { border-radius: 9999px; }
 
-      // Funções de CRUD
-      const handleAddPayment = () => {
-        if (!formData.title.trim()) {
-          showNotification('Informe uma descrição', 'error');
-          return;
-        }
+.shadow { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+.shadow-lg { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
 
-        const amount = parseCurrencyInput(formData.amount);
-        if (amount <= 0) {
-          showNotification('Informe um valor válido', 'error');
-          return;
-        }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
 
-        const day = parseInt(formData.day) || new Date().getDate();
-        const [year, month] = selectedMonth.split('-').map(Number);
-        
-        // Garantir que o dia seja válido para o mês
-        const lastDay = new Date(year, month, 0).getDate();
-        const validDay = Math.min(Math.max(1, day), lastDay);
+/* Ícones */
+.icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
-        const newPayment = {
-          id: Date.now(),
-          title: formData.title.trim(),
-          amount: amount,
-          dueDate: new Date(year, month - 1, validDay).toISOString(),
-          category: formData.category,
-          paid: formData.paid,
-          notes: formData.notes,
-          createdAt: new Date().toISOString()
-        };
+.icon-sm {
+  width: 20px;
+  height: 20px;
+}
 
-        if (editingPayment) {
-          setPayments(prev => prev.map(p => 
-            p.id === editingPayment.id ? newPayment : p
-          ));
-          showNotification('Pagamento atualizado!');
-        } else {
-          setPayments(prev => [...prev, newPayment]);
-          showNotification('Pagamento adicionado!');
-        }
+.icon-lg {
+  width: 32px;
+  height: 32px;
+}
 
-        handleCloseModal();
-      };
+/* Notificações */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  color: white;
+  z-index: 1001;
+  animation: fadeIn 0.3s ease-out;
+  max-width: 400px;
+}
 
-      const handleEditPayment = (payment) => {
-        setEditingPayment(payment);
-        const dueDate = new Date(payment.dueDate);
-        setFormData({
-          title: payment.title,
-          amount: payment.amount.toFixed(2).replace('.', ','),
-          day: dueDate.getDate().toString(),
-          category: payment.category || 'outros',
-          paid: payment.paid || false,
-          notes: payment.notes || ''
-        });
-        setShowAddModal(true);
-      };
+.notification.success {
+  background: linear-gradient(135deg, #10b981, #34d399);
+}
 
-      const handleDeletePayment = (paymentId) => {
-        if (confirm('Tem certeza que deseja excluir este pagamento?')) {
-          setPayments(prev => prev.filter(p => p.id !== paymentId));
-          showNotification('Pagamento excluído!');
-        }
-      };
+.notification.error {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+}
 
-      const handleTogglePaid = (paymentId) => {
-        setPayments(prev => prev.map(p => 
-          p.id === paymentId ? { ...p, paid: !p.paid } : p
-        ));
-        showNotification('Status atualizado!');
-      };
+.notification.warning {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
 
-      const handleCloseModal = () => {
-        setShowAddModal(false);
-        setEditingPayment(null);
-        setFormData({
-          title: '',
-          amount: '',
-          day: '',
-          category: 'outros',
-          paid: false,
-          notes: ''
-        });
-      };
+/* Tooltip */
+.tooltip {
+  position: relative;
+}
 
-      const showNotification = (text, type = 'success') => {
-        setNotification({ show: true, text, type });
-        setTimeout(() => {
-          setNotification({ show: false, text: '', type: 'success' });
-        }, 3000);
-      };
+.tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 100;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
 
-      const exportData = () => {
-        const data = {
-          payments,
-          exportDate: new Date().toISOString(),
-          version: '1.0'
-        };
-        
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup-financas-${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showNotification('Backup exportado com sucesso!');
-      };
+/* Loading */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+}
 
-      const importData = (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = JSON.parse(e.target.result);
-            if (data.payments && Array.isArray(data.payments)) {
-              setPayments(data.payments);
-              showNotification('Dados importados com sucesso!');
-            } else {
-              showNotification('Arquivo inválido', 'error');
-            }
-          } catch (error) {
-            showNotification('Erro ao importar arquivo', 'error');
-          }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
-      };
+/* Card específico para finanças */
+.finance-card {
+  background: var(--gradient-primary);
+  color: white;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
 
-      const clearData = () => {
-        if (confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados. Tem certeza?')) {
-          if (prompt('Digite "APAGAR" para confirmar:') === 'APAGAR') {
-            setPayments([]);
-            localStorage.removeItem('financas_payments');
-            showNotification('Dados apagados com sucesso!');
-          }
-        }
-      };
+.finance-card h3 {
+  color: white;
+  margin-bottom: 8px;
+}
 
-      // Categorias
-      const categories = [
-        { id: 'alimentacao', name: '🍔 Alimentação', color: '#00D68F' },
-        { id: 'transporte', name: '🚗 Transporte', color: '#FFAA00' },
-        { id: 'moradia', name: '🏠 Moradia', color: '#0095FF' },
-        { id: 'lazer', name: '🎮 Lazer', color: '#FF3D71' },
-        { id: 'saude', name: '💊 Saúde', color: '#8A05BE' },
-        { id: 'educacao', name: '📚 Educação', color: '#00CEC9' },
-        { id: 'outros', name: '📦 Outros', color: '#8C8C8C' }
-      ];
+.finance-card .amount {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
 
-      // Cálculos
-      const monthPayments = getPaymentsForMonth();
-      const pendingPayments = monthPayments.filter(p => !p.paid);
-      const paidPayments = monthPayments.filter(p => p.paid);
-      const totals = getTotals();
+.finance-card .subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
 
-      return (
-        <div className="min-h-screen bg-gray-900 text-white">
-          {/* Header */}
-          <header className="glass-effect sticky top-0 z-40 px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="nubank-card w-10 h-10 rounded-xl flex items-center justify-center">
-                  <span className="material-icons-round">payments</span>
-                </div>
-                <div>
-                  <h1 className="font-bold text-lg">Finanças</h1>
-                  <p className="text-xs text-gray-400">{getMonthName()}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <button 
-                  onClick={() => changeMonth(-1)}
-                  className="p-2 hover:bg-white/5 rounded-lg"
-                >
-                  <span className="material-icons-round">chevron_left</span>
-                </button>
-                <button 
-                  onClick={() => changeMonth(1)}
-                  className="p-2 hover:bg-white/5 rounded-lg"
-                >
-                  <span className="material-icons-round">chevron_right</span>
-                </button>
-                <button 
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 hover:bg-white/5 rounded-lg"
-                >
-                  <span className="material-icons-round">menu</span>
-                </button>
-              </div>
-            </div>
-            
-            {/* Menu Dropdown */}
-            {showMenu && (
-              <div className="absolute top-full right-4 mt-2 w-64 card-modern shadow-2xl slide-in-right">
-                <div className="space-y-2 p-2">
-                  <label className="flex items-center justify-between w-full p-3 hover:bg-white/5 rounded-lg cursor-pointer">
-                    <span>Importar Backup</span>
-                    <span className="material-icons-round">upload</span>
-                    <input 
-                      type="file" 
-                      accept=".json" 
-                      onChange={importData}
-                      className="hidden" 
-                    />
-                  </label>
-                  
-                  <button 
-                    onClick={exportData}
-                    className="flex items-center justify-between w-full p-3 hover:bg-white/5 rounded-lg"
-                  >
-                    <span>Exportar Backup</span>
-                    <span className="material-icons-round">download</span>
-                  </button>
-                  
-                  <div className="border-t border-white/10 my-2"></div>
-                  
-                  <button 
-                    onClick={clearData}
-                    className="flex items-center justify-between w-full p-3 hover:bg-white/5 rounded-lg text-red-400"
-                  >
-                    <span>Limpar Todos os Dados</span>
-                    <span className="material-icons-round">delete</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </header>
+/* Badge para categorias */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+}
 
-          {/* Cards de Resumo */}
-          <div className="p-4">
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="nubank-card">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="p-2 rounded-lg bg-white/10">
-                    <span className="material-icons-round">trending_up</span>
-                  </div>
-                  <div>
-                    <p className="text-sm opacity-80">Saldo</p>
-                    <p className="text-xl font-bold">
-                      {formatCurrency(totals.paid - totals.pending)}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs opacity-70">Pagas - Pendentes</p>
-              </div>
-              
-              <div className="card-modern">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="p-2 rounded-lg bg-yellow-500/20">
-                    <span className="material-icons-round text-yellow-400">receipt</span>
-                  </div>
-                  <div>
-                    <p className="text-sm opacity-80">Pendentes</p>
-                    <p className="text-xl font-bold text-yellow-400">
-                      {formatCurrency(totals.pending)}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs opacity-70">{pendingPayments.length} itens</p>
-              </div>
-              
-              <div className="card-modern">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="p-2 rounded-lg bg-green-500/20">
-                    <span className="material-icons-round text-green-400">check_circle</span>
-                  </div>
-                  <div>
-                    <p className="text-sm opacity-80">Pagas</p>
-                    <p className="text-xl font-bold text-green-400">
-                      {formatCurrency(totals.paid)}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs opacity-70">{paidPayments.length} itens</p>
-              </div>
-              
-              <div className="card-modern">
-                <div className="flex items-center space-x-2 mb-2">
-                  <div className="p-2 rounded-lg bg-purple-500/20">
-                    <span className="material-icons-round text-purple-400">payments</span>
-                  </div>
-                  <div>
-                    <p className="text-sm opacity-80">Total</p>
-                    <p className="text-xl font-bold">
-                      {formatCurrency(totals.total)}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs opacity-70">Todas as despesas</p>
-              </div>
-            </div>
+.category-badge .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
 
-            {/* Lista de Pagamentos */}
-            <div className="mb-20">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Pagamentos do Mês</h2>
-                <button 
-                  onClick={() => setShowAddModal(true)}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <span className="material-icons-round">add</span>
-                  <span>Novo</span>
-                </button>
-              </div>
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
 
-              {pendingPayments.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-medium text-yellow-400 mb-3 flex items-center">
-                    <span className="material-icons-round mr-2">warning</span>
-                    Pendentes ({pendingPayments.length})
-                  </h3>
-                  {pendingPayments.map(payment => (
-                    <PaymentItem 
-                      key={payment.id}
-                      payment={payment}
-                      categories={categories}
-                      onTogglePaid={() => handleTogglePaid(payment.id)}
-                      onEdit={() => handleEditPayment(payment)}
-                      onDelete={() => handleDeletePayment(payment.id)}
-                    />
-                  ))}
-                </div>
-              )}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
 
-              {paidPayments.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-green-400 mb-3 flex items-center">
-                    <span className="material-icons-round mr-2">check_circle</span>
-                    Pagas ({paidPayments.length})
-                  </h3>
-                  {paidPayments.map(payment => (
-                    <PaymentItem 
-                      key={payment.id}
-                      payment={payment}
-                      categories={categories}
-                      onTogglePaid={() => handleTogglePaid(payment.id)}
-                      onEdit={() => handleEditPayment(payment)}
-                      onDelete={() => handleDeletePayment(payment.id)}
-                    />
-                  ))}
-                </div>
-              )}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .4s;
+  border-radius: 34px;
+}
 
-              {monthPayments.length === 0 && (
-                <div className="card-modern p-8 text-center">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                    <span className="material-icons-round text-2xl text-gray-400">receipt</span>
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">Nenhum pagamento</h3>
-                  <p className="text-gray-400 mb-4">Adicione seu primeiro pagamento para começar</p>
-                  <button 
-                    onClick={() => setShowAddModal(true)}
-                    className="btn-primary"
-                  >
-                    Adicionar Pagamento
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
 
-          {/* Botão Flutuante */}
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="fixed bottom-6 right-6 btn-primary w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-30"
-          >
-            <span className="material-icons-round">add</span>
-          </button>
+input:checked + .slider {
+  background-color: var(--primary);
+}
 
-          {/* Modal de Adicionar/Editar Pagamento */}
-          {showAddModal && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-              <div className="card-modern w-full max-w-md max-h-[90vh] overflow-y-auto slide-in-right">
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold">
-                      {editingPayment ? 'Editar Pagamento' : 'Novo Pagamento'}
-                    </h2>
-                    <button 
-                      onClick={handleCloseModal}
-                      className="p-2 hover:bg-white/5 rounded-lg"
-                    >
-                      <span className="material-icons-round">close</span>
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Descrição *</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Supermercado, Conta de Luz..."
-                        value={formData.title}
-                        onChange={e => setFormData({...formData, title: e.target.value})}
-                        className="input-modern"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Valor (R$) *</label>
-                        <input
-                          type="text"
-                          placeholder="Ex: 150,90"
-                          value={formData.amount}
-                          onChange={e => setFormData({...formData, amount: e.target.value})}
-                          className="input-modern"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Dia *</label>
-                        <input
-                          type="number"
-                          placeholder="1-31"
-                          value={formData.day}
-                          onChange={e => setFormData({...formData, day: e.target.value})}
-                          className="input-modern"
-                          min="1"
-                          max="31"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Categoria</label>
-                      <select
-                        value={formData.category}
-                        onChange={e => setFormData({...formData, category: e.target.value})}
-                        className="input-modern"
-                      >
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Status</label>
-                      <div className="flex space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, paid: false})}
-                          className={`flex-1 py-2 rounded-lg border ${
-                            !formData.paid
-                              ? 'border-red-500 bg-red-500/10 text-red-400'
-                              : 'border-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          Pendente
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, paid: true})}
-                          className={`flex-1 py-2 rounded-lg border ${
-                            formData.paid
-                              ? 'border-green-500 bg-green-500/10 text-green-400'
-                              : 'border-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          Pago
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Observações (opcional)</label>
-                      <textarea
-                        placeholder="Adicione observações..."
-                        value={formData.notes}
-                        onChange={e => setFormData({...formData, notes: e.target.value})}
-                        rows="3"
-                        className="input-modern resize-none"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-3 mt-8">
-                    <button
-                      onClick={handleAddPayment}
-                      className="btn-primary flex-1 py-3"
-                    >
-                      {editingPayment ? 'Atualizar' : 'Salvar'}
-                    </button>
-                    <button
-                      onClick={handleCloseModal}
-                      className="btn-secondary flex-1 py-3"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Notificação */}
-          {notification.show && (
-            <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-2xl z-50 fade-in ${
-              notification.type === 'error' ? 'bg-red-500' :
-              notification.type === 'warning' ? 'bg-yellow-500' :
-              'bg-green-500'
-            }`}>
-              <div className="flex items-center space-x-2">
-                {notification.type === 'error' && (
-                  <span className="material-icons-round">error</span>
-                )}
-                {notification.type === 'warning' && (
-                  <span className="material-icons-round">warning</span>
-                )}
-                {notification.type === 'success' && (
-                  <span className="material-icons-round">check_circle</span>
-                )}
-                <span>{notification.text}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // ========== COMPONENTE DE ITEM DE PAGAMENTO ==========
-    function PaymentItem({ payment, categories, onTogglePaid, onEdit, onDelete }) {
-      const category = categories.find(c => c.id === payment.category) || categories.find(c => c.id === 'outros');
-      
-      return (
-        <div className="card-modern mb-3 fade-in">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <button 
-                onClick={onTogglePaid}
-                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  payment.paid 
-                    ? 'bg-green-500' 
-                    : 'border-2 border-yellow-500'
-                }`}
-              >
-                {payment.paid && (
-                  <span className="material-icons-round text-white text-sm">check</span>
-                )}
-              </button>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2">
-                  <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: category.color }}
-                  />
-                  <h3 className={`font-semibold truncate ${payment.paid ? 'line-through opacity-60' : ''}`}>
-                    {payment.title}
-                  </h3>
-                </div>
-                
-                <div className="flex items-center space-x-3 mt-1 text-sm text-gray-400">
-                  <span>{formatDate(payment.dueDate)}</span>
-                  <span>•</span>
-                  <span>{category.name}</span>
-                </div>
-                
-                {payment.notes && (
-                  <p className="text-sm text-gray-400 mt-2">{payment.notes}</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <span className={`text-lg font-semibold ${payment.paid ? 'opacity-60' : ''}`}>
-                {formatCurrency(payment.amount)}
-              </span>
-              
-              <div className="flex space-x-1">
-                <button 
-                  onClick={onEdit}
-                  className="p-1 hover:bg-white/5 rounded"
-                >
-                  <span className="material-icons-round text-gray-400 text-lg">edit</span>
-                </button>
-                <button 
-                  onClick={onDelete}
-                  className="p-1 hover:bg-white/5 rounded"
-                >
-                  <span className="material-icons-round text-gray-400 text-lg">delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Função helper dentro do componente
-    function formatDate(isoString) {
-      if (!isoString) return '';
-      const date = new Date(isoString);
-      return date.toLocaleDateString('pt-BR');
-    }
-
-    function formatCurrency(value) {
-      if (!value && value !== 0) return 'R$ 0,00';
-      return Number(value).toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      });
-    }
-
-    // ========== RENDERIZAÇÃO ==========
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
-</html>
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
