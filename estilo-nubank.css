@@ -1,0 +1,50 @@
+/* ===== ESTILO MOBILE – NUBANK / INTER ===== */
+:root {
+  --bg-main: #0b0f1a;
+  --bg-card: #111827;
+  --primary: #8b5cf6;
+  --primary-soft: #a78bfa;
+  --text-main: #e5e7eb;
+  --text-muted: #9ca3af;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+button {
+  background: linear-gradient(135deg, var(--primary), var(--primary-soft));
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 16px;
+}
+
+input, select {
+  background-color: #020617;
+  color: var(--text-main);
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.card, .container, .box, .panel {
+  background-color: var(--bg-card);
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  button, input, select {
+    min-height: 44px;
+  }
+}
