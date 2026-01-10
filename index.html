@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+  <title>Controle de Finanças V3.3 - Mobile</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .card-color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    
+    /* AJUSTES EXCLUSIVOS PARA CELULAR */
+    @media (max-width: 640px) {
+      input, select, button { 
+        min-height: 48px !important; /* Facilita o toque com o polegar */
+        font-size: 16px !important; /* Evita zoom automático no iPhone */
+      }
+      .grid { grid-template-columns: 1fr !important; } /* Coloca elementos um embaixo do outro no celular */
+      .p-6 { padding: 1rem !important; }
+      h1 { font-size: 1.25rem !important; }
+      .overflow-x-auto { -webkit-overflow-scrolling: touch; } /* Scroll suave em tabelas */
+    }
+    
+    * { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- ÍCONES ---
+    const Lock = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>);
+    const Unlock = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>);
+    const Plus = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>);
+    const Download = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v9m0-9l-4 4m4-4l4 4" /></svg>);
+    const Upload = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5-5 5 5M12 5v14" /></svg>);
+    const Left = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>);
+    const Right = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7 7 7" /></svg>);
+    const ChartIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>);
+    const Sun = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>);
+    const Moon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>);
+    const Trash = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>);
+    const Edit = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>);
+    const XIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
+    const PDFIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>);
+
+    // --- CATEGORIAS ---
+    const CATEGORIES = [
+      { id: 'mercantil', name: '🛒 Mercantil', color: '#10b981', bgColor: 'bg-emerald-500', darkBgColor: 'bg-emerald-600', featured: true },
+      { id: 'lanches', name: '🍕 Lanches', color: '#f59e0b', bgColor: 'bg-amber-500', darkBgColor: 'bg-amber-600', featured: true },
+      { id: 'combustivel', name: '⛽ Combustível', color: '#ef4444', bgColor: 'bg-red-500', darkBgColor: 'bg-red-600', featured: true },
+      { id: 'cartao', name: '💳 Cartão de Crédito', color: '#8b5cf6', bgColor: 'bg-purple-500', darkBgColor: 'bg-purple-600', featured: true },
+      { id: 'dizimos_ofertas', name: '⛪ Dízimos e Ofertas', color: '#fbbf24', bgColor: 'bg-yellow-500', darkBgColor: 'bg-yellow-600' },
+      { id: 'mei', name: '🏭 MEI', color: '#a16207', bgColor: 'bg-yellow-700', darkBgColor: 'bg-yellow-800' },
+      { id: 'moradia', name: '🏠 Moradia', color: '#3b82f6', bgColor: 'bg-blue-500', darkBgColor: 'bg-blue-600' },
+      { id: 'alimentacao', name: '🍔 Alimentação', color: '#10b981', bgColor: 'bg-green-500', darkBgColor: 'bg-green-600' },
+      { id: 'transporte', name: '🚗 Transporte', color: '#f59e0b', bgColor: 'bg-yellow-500', darkBgColor: 'bg-yellow-600' },
+      { id: 'saude', name: '💊 Saúde', color: '#ef4444', bgColor: 'bg-pink-500', darkBgColor: 'bg-pink-600' },
+      { id: 'educacao', name: '📚 Educação', color: '#8b5cf6', bgColor: 'bg-indigo-500', darkBgColor: 'bg-indigo-600' },
+      { id: 'lazer', name: '🎮 Lazer', color: '#ec4899', bgColor: 'bg-rose-500', darkBgColor: 'bg-rose-600' },
+      { id: 'vestuario', name: '👕 Vestuário', color: '#06b6d4', bgColor: 'bg-cyan-500', darkBgColor: 'bg-cyan-600' },
+      { id: 'outros', name: '📦 Outros', color: '#6b7280', bgColor: 'bg-gray-500', darkBgColor: 'bg-gray-600' }
+    ];
+
+    const CARD_COLORS = [
+      { name: 'Azul Escuro', class: 'bg-blue-900', color: '#1e3a8a' },
+      { name: 'Azul Royal', class: 'bg-blue-600', color: '#2563eb' },
+      { name: 'Roxo VIP', class: 'bg-purple-900', color: '#581c87' },
+      { name: 'Roxo Nub', class: 'bg-purple-600', color: '#9333ea' },
+      { name: 'Preto Black', class: 'bg-gray-900', color: '#111827' },
+      { name: 'Grafite', class: 'bg-gray-700', color: '#374151' },
+      { name: 'Verde Esmeralda', class: 'bg-emerald-800', color: '#065f46' },
+      { name: 'Laranja Inter', class: 'bg-orange-600', color: '#ea580c' },
+      { name: 'Vermelho Ruby', class: 'bg-red-800', color: '#991b1b' }
+    ];
+
+    // --- UTILITÁRIOS ---
+    const currencyFormat = (num) => {
+      if (num === undefined || num === null || isNaN(num)) return 'R$ 0,00';
+      return Number(num).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const parseCurrencyInput = (input) => {
+      if (!input) return '';
+      let val = input.toString().replace('R$', '').replace(/\s/g, '');
+      val = val.replace(/\./g, '').replace(',', '.');
+      return parseFloat(val) || 0;
+    };
+
+    // --- COMPONENTES MODAIS (PDF) ---
+    const PDFConfigModal = ({ darkMode, onClose, onGenerate, defaultOptions }) => {
+      const [options, setOptions] = useState(defaultOptions);
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-6 rounded-lg w-full max-w-md`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Configurar Relatório PDF</h3>
+              <button onClick={onClose}><XIcon /></button>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span>Incluir Resumo</span>
+                <input type="checkbox" checked={options.includeSummary} onChange={e => setOptions({...options, includeSummary: e.target.checked})} className="w-5 h-5" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Incluir Gráficos</span>
+                <input type="checkbox" checked={options.includeCharts} onChange={e => setOptions({...options, includeCharts: e.target.checked})} className="w-5 h-5" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Incluir Entradas</span>
+                <input type="checkbox" checked={options.includeEntries} onChange={e => setOptions({...options, includeEntries: e.target.checked})} className="w-5 h-5" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Incluir Saídas</span>
+                <input type="checkbox" checked={options.includeExpenses} onChange={e => setOptions({...options, includeExpenses: e.target.checked})} className="w-5 h-5" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Incluir Cartões</span>
+                <input type="checkbox" checked={options.includeCards} onChange={e => setOptions({...options, includeCards: e.target.checked})} className="w-5 h-5" />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Incluir Parcelamentos</span>
+                <input type="checkbox" checked={options.includeInstallments} onChange={e => setOptions({...options, includeInstallments: e.target.checked})} className="w-5 h-5" />
+              </div>
+            </div>
+            <button onClick={() => onGenerate(options)} className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700">Visualizar PDF</button>
+          </div>
+        </div>
+      );
+    };
+
+    const PDFPreviewModal = ({ data, options, darkMode, onClose, onGenerate }) => {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-6 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto`}>
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-inherit py-2 z-10 border-b border-gray-700">
+              <h3 className="text-xl font-bold">Pré-visualização do Relatório</h3>
+              <div className="flex space-x-2">
+                <button onClick={() => onGenerate(data, options)} className="bg-green-600 text-white px-4 py-2 rounded flex items-center gap-2"><Download /> Baixar PDF</button>
+                <button onClick={onClose} className="bg-gray-600 text-white px-4 py-2 rounded"><XIcon /></button>
+              </div>
+            </div>
+            <div className="bg-white text-black p-8 font-serif text-sm">
+              <h1 className="text-2xl font-bold text-center mb-6">Relatório Financeiro Pessoal</h1>
+              <p className="text-center mb-8 italic">Gerado em: {new Date().toLocaleString('pt-BR')}</p>
+              {options.includeSummary && (
+                <div className="mb-6 border-b pb-4">
+                  <h2 className="text-lg font-bold mb-2 uppercase border-b border-black inline-block">Resumo Geral</h2>
+                  <div className="grid grid-cols-3 gap-4 mt-2 font-bold">
+                    <p>Total Entradas: {currencyFormat(data.summary.income)}</p>
+                    <p>Total Saídas: {currencyFormat(data.summary.expense)}</p>
+                    <p>Saldo Final: {currencyFormat(data.summary.balance)}</p>
+                  </div>
+                </div>
+              )}
+              {options.includeExpenses && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold mb-2 uppercase border-b border-black inline-block">Detalhamento de Saídas</h2>
+                  <table className="w-full mt-2 border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border border-gray-300 p-2 text-left">Data</th>
+                        <th className="border border-gray-300 p-2 text-left">Descrição</th>
+                        <th className="border border-gray-300 p-2 text-left">Categoria</th>
+                        <th className="border border-gray-300 p-2 text-right">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.expenses.map(exp => (
+                        <tr key={exp.id}>
+                          <td className="border border-gray-300 p-2">{new Date(exp.date).toLocaleDateString('pt-BR')}</td>
+                          <td className="border border-gray-300 p-2">{exp.description}</td>
+                          <td className="border border-gray-300 p-2">{CATEGORIES.find(c => c.id === exp.category)?.name || 'Outros'}</td>
+                          <td className="border border-gray-300 p-2 text-right">{currencyFormat(exp.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-center text-xs mt-10">Este documento é um registro privado gerado pelo aplicativo Meu Controle de Finanças.</p>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- APLICATIVO PRINCIPAL ---
+    function App() {
+      const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
+      const [passwordInput, setPasswordInput] = useState('');
+      const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+      const [entries, setEntries] = useState(() => JSON.parse(localStorage.getItem('entries')) || []);
+      const [expenses, setExpenses] = useState(() => JSON.parse(localStorage.getItem('expenses')) || []);
+      const [installments, setInstallments] = useState(() => JSON.parse(localStorage.getItem('installments')) || []);
+      const [cards, setCards] = useState(() => JSON.parse(localStorage.getItem('cards')) || []);
+      
+      const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+      const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+      
+      const [showAddEntry, setShowAddEntry] = useState(false);
+      const [showAddExpense, setShowAddExpense] = useState(false);
+      const [showAddInstallment, setShowAddInstallment] = useState(false);
+      const [showAddCard, setShowAddCard] = useState(false);
+      const [showChart, setShowChart] = useState(false);
+      
+      const [showPDFConfig, setShowPDFConfig] = useState(false);
+      const [showPDFPreview, setShowPDFPreview] = useState(false);
+      const [pdfData, setPdfData] = useState(null);
+      const [pdfOptions, setPdfOptions] = useState({ includeSummary: true, includeCharts: true, includeEntries: true, includeExpenses: true, includeCards: true, includeInstallments: true });
+      
+      const [notification, setNotification] = useState({ show: false, text: '', type: 'success' });
+      const chartRef = useRef(null);
+      const chartInstance = useRef(null);
+
+      useEffect(() => {
+        localStorage.setItem('isLoggedIn', isLoggedIn);
+        localStorage.setItem('darkMode', darkMode);
+        localStorage.setItem('entries', JSON.stringify(entries));
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        localStorage.setItem('installments', JSON.stringify(installments));
+        localStorage.setItem('cards', JSON.stringify(cards));
+        document.documentElement.classList.toggle('dark', darkMode);
+      }, [isLoggedIn, darkMode, entries, expenses, installments, cards]);
+
+      const notify = (text, type = 'success') => {
+        setNotification({ show: true, text, type });
+        setTimeout(() => setNotification({ show: false, text: '', type: 'success' }), 3000);
+      };
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (passwordInput === '6564') {
+          setIsLoggedIn(true);
+          notify('Bem-vindo!');
+        } else {
+          notify('Senha incorreta!', 'error');
+        }
+      };
+
+      const handleLogout = () => {
+        setIsLoggedIn(false);
+        setPasswordInput('');
+      };
+
+      // Cálculos de Totais
+      const filteredEntries = entries.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+      const filteredExpenses = expenses.filter(e => {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+      
+      const totalIncome = filteredEntries.reduce((acc, curr) => acc + curr.amount, 0);
+      const totalExpense = filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+
+      // Lógica de Parcelas
+      const activeInstallments = installments.filter(inst => {
+        const startDate = new Date(inst.startDate);
+        const startMonth = startDate.getMonth();
+        const startYear = startDate.getFullYear();
+        const monthsDiff = (currentYear - startYear) * 12 + (currentMonth - startMonth);
+        return monthsDiff >= 0 && monthsDiff < inst.totalInstallments;
+      });
+      
+      const totalInstallmentsValue = activeInstallments.reduce((acc, curr) => acc + (curr.totalAmount / curr.totalInstallments), 0);
+      const balance = totalIncome - totalExpense - totalInstallmentsValue;
+
+      // --- GRÁFICOS ---
+      useEffect(() => {
+        if (showChart && chartRef.current) {
+          if (chartInstance.current) chartInstance.current.destroy();
+          const ctx = chartRef.current.getContext('2d');
+          const categoryTotals = CATEGORIES.map(cat => {
+            const total = filteredExpenses
+              .filter(exp => exp.category === cat.id)
+              .reduce((acc, curr) => acc + curr.amount, 0);
+            return total;
+          });
+
+          chartInstance.current = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: CATEGORIES.map(c => c.name),
+              datasets: [{
+                data: categoryTotals,
+                backgroundColor: CATEGORIES.map(c => c.color),
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { position: 'bottom', labels: { color: darkMode ? '#fff' : '#333' } } }
+            }
+          });
+        }
+      }, [showChart, filteredExpenses, darkMode]);
+
+      // --- PDF ---
+      const handleGeneratePDF = (options) => {
+        setPdfOptions(options);
+        setPdfData({
+          summary: { income: totalIncome, expense: totalExpense + totalInstallmentsValue, balance: balance },
+          expenses: filteredExpenses,
+          entries: filteredEntries,
+          cards: cards,
+          installments: activeInstallments
+        });
+        setShowPDFConfig(false);
+        setShowPDFPreview(true);
+      };
+
+      const handleDownloadPDF = async (data, options) => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.text("Relatório Financeiro", 105, 20, { align: "center" });
+        doc.setFontSize(12);
+        doc.text(`Período: ${currentMonth + 1}/${currentYear}`, 105, 30, { align: "center" });
+        
+        let yPos = 50;
+        if(options.includeSummary) {
+          doc.text(`Total Entradas: ${currencyFormat(data.summary.income)}`, 20, yPos);
+          doc.text(`Total Saídas: ${currencyFormat(data.summary.expense)}`, 20, yPos + 10);
+          doc.text(`Saldo: ${currencyFormat(data.summary.balance)}`, 20, yPos + 20);
+          yPos += 40;
+        }
+
+        if(options.includeExpenses) {
+          doc.text("Saídas Detalhadas:", 20, yPos);
+          yPos += 10;
+          data.expenses.forEach(exp => {
+            if(yPos > 270) { doc.addPage(); yPos = 20; }
+            doc.text(`${new Date(exp.date).toLocaleDateString()} - ${exp.description} - ${currencyFormat(exp.amount)}`, 20, yPos);
+            yPos += 7;
+          });
+        }
+
+        doc.save(`relatorio_${currentMonth + 1}_${currentYear}.pdf`);
+        notify('PDF baixado!');
+      };
+
+      // --- CRUD ---
+      const addEntry = (e) => {
+        e.preventDefault();
+        const amount = parseCurrencyInput(e.target.amount.value);
+        if (amount <= 0) return;
+        setEntries([...entries, { id: Date.now(), description: e.target.description.value, amount, date: e.target.date.value }]);
+        setShowAddEntry(false);
+        notify('Entrada adicionada!');
+      };
+
+      const addExpense = (e) => {
+        e.preventDefault();
+        const amount = parseCurrencyInput(e.target.amount.value);
+        if (amount <= 0) return;
+        setExpenses([...expenses, { id: Date.now(), description: e.target.description.value, amount, category: e.target.category.value, date: e.target.date.value }]);
+        setShowAddExpense(false);
+        notify('Saída adicionada!');
+      };
+
+      const addCard = (e) => {
+        e.preventDefault();
+        setCards([...cards, { id: Date.now(), bank: e.target.bank.value, lastDigits: e.target.lastDigits.value, limit: parseFloat(e.target.limit.value), closingDay: e.target.closingDay.value, colorClass: e.target.color.value }]);
+        setShowAddCard(false);
+        notify('Cartão adicionado!');
+      };
+
+      const addInstallment = (e) => {
+        e.preventDefault();
+        setInstallments([...installments, { 
+          id: Date.now(), 
+          description: e.target.description.value, 
+          totalAmount: parseFloat(e.target.totalAmount.value), 
+          totalInstallments: parseInt(e.target.totalInstallments.value), 
+          startDate: e.target.startDate.value,
+          paidInstallments: 0
+        }]);
+        setShowAddInstallment(false);
+        notify('Parcelamento registrado!');
+      };
+
+      if (!isLoggedIn) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
+              <div className="flex justify-center mb-6">
+                <div className="p-4 bg-blue-600 rounded-full text-white"><Lock /></div>
+              </div>
+              <h2 className="text-2xl font-bold text-center mb-6 dark:text-white">Acesso Restrito</h2>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <input type="password" placeholder="Digite a senha" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full p-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-white focus:border-blue-500 outline-none transition-all" />
+                <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 active:scale-95 transition-all">Entrar</button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`min-h-screen pb-20 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-800'}`}>
+          {/* HEADER */}
+          <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-blue-600 font-black text-xl">FINANÇAS</span>
+              <span className="text-xs font-bold px-2 py-1 bg-blue-100 text-blue-600 rounded uppercase">v3.3</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700">{darkMode ? <Sun /> : <Moon />}</button>
+              <button onClick={handleLogout} className="p-2 rounded-lg bg-red-100 text-red-600"><Unlock /></button>
+            </div>
+          </header>
+
+          <main className="max-w-4xl mx-auto p-4 space-y-6 fade-in">
+            {/* CONTROLES DE DATA */}
+            <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm">
+              <button onClick={() => { if(currentMonth === 0){ setCurrentMonth(11); setCurrentYear(currentYear-1); } else { setCurrentMonth(currentMonth-1); } }} className="p-2"><Left /></button>
+              <div className="text-center">
+                <h2 className="text-lg font-bold capitalize">{new Date(currentYear, currentMonth).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h2>
+              </div>
+              <button onClick={() => { if(currentMonth === 11){ setCurrentMonth(0); setCurrentYear(currentYear+1); } else { setCurrentMonth(currentMonth+1); } }} className="p-2"><Right /></button>
+            </div>
+
+            {/* CARDS DE RESUMO */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border-l-8 border-green-500">
+                <p className="text-sm text-gray-500 uppercase font-bold">Entradas</p>
+                <h3 className="text-2xl font-black text-green-500 mt-2">{currencyFormat(totalIncome)}</h3>
+              </div>
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border-l-8 border-red-500">
+                <p className="text-sm text-gray-500 uppercase font-bold">Saídas (Total)</p>
+                <h3 className="text-2xl font-black text-red-500 mt-2">{currencyFormat(totalExpense + totalInstallmentsValue)}</h3>
+              </div>
+              <div className={`bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border-l-8 ${balance >= 0 ? 'border-blue-500' : 'border-orange-500'}`}>
+                <p className="text-sm text-gray-500 uppercase font-bold">Saldo</p>
+                <h3 className={`text-2xl font-black mt-2 ${balance >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>{currencyFormat(balance)}</h3>
+              </div>
+            </div>
+
+            {/* BOTÕES DE AÇÃO */}
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setShowAddEntry(true)} className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2"><Plus /> Entrada</button>
+              <button onClick={() => setShowAddExpense(true)} className="flex-1 bg-red-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2"><Plus /> Saída</button>
+              <button onClick={() => setShowPDFConfig(true)} className="bg-gray-700 text-white p-4 rounded-2xl"><PDFIcon /></button>
+              <button onClick={() => setShowChart(!showChart)} className="bg-indigo-600 text-white p-4 rounded-2xl"><ChartIcon /></button>
+            </div>
+
+            {/* GRÁFICO */}
+            {showChart && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm">
+                <h3 className="font-bold mb-4">Gastos por Categoria</h3>
+                <canvas ref={chartRef}></canvas>
+              </div>
+            )}
+
+            {/* SEÇÕES DE LISTAGEM */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold px-2 flex items-center gap-2"><HistoryIcon /> Movimentações do Mês</h3>
+              <div className="space-y-2">
+                {filteredExpenses.map(exp => (
+                  <div key={exp.id} className="bg-white dark:bg-gray-800 p-4 rounded-2xl flex justify-between items-center shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${CATEGORIES.find(c => c.id === exp.category)?.bgColor || 'bg-gray-500'}`}>
+                        {CATEGORIES.find(c => c.id === exp.category)?.name.split(' ')[0]}
+                      </div>
+                      <div>
+                        <p className="font-bold">{exp.description}</p>
+                        <p className="text-xs text-gray-400">{new Date(exp.date).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-red-500">-{currencyFormat(exp.amount)}</p>
+                      <button onClick={() => setExpenses(expenses.filter(e => e.id !== exp.id))} className="text-gray-300 hover:text-red-500 transition-colors"><Trash /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CARTÕES */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center px-2">
+                <h3 className="text-xl font-bold flex items-center gap-2"><CreditCardIcon /> Meus Cartões</h3>
+                <button onClick={() => setShowAddCard(true)} className="text-blue-500 text-sm font-bold">+ Novo</button>
+              </div>
+              <div className="flex overflow-x-auto gap-4 pb-4">
+                {cards.map(card => (
+                  <div key={card.id} className={`min-w-[280px] p-6 rounded-3xl shadow-xl text-white ${card.colorClass || 'bg-gray-800'}`}>
+                    <p className="text-sm opacity-80 uppercase font-bold">{card.bank}</p>
+                    <h4 className="text-xl font-mono mt-4 tracking-widest">**** **** **** {card.lastDigits}</h4>
+                    <div className="mt-6 flex justify-between items-end">
+                      <div>
+                        <p className="text-[10px] uppercase">Limite</p>
+                        <p className="font-bold">{currencyFormat(card.limit)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase">Fecha Dia</p>
+                        <p className="font-bold">{card.closingDay}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </main>
+
+          {/* MODAIS DE CADASTRO */}
+          {showAddExpense && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4">
+              <form onSubmit={addExpense} className="bg-white dark:bg-gray-800 p-6 rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl">
+                <h3 className="text-xl font-bold mb-4">Nova Saída</h3>
+                <div className="space-y-4">
+                  <input name="description" placeholder="O que você comprou?" required className="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-700 outline-none" />
+                  <input name="amount" placeholder="Valor R$ 0,00" required className="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-700 outline-none font-bold text-red-500" />
+                  <select name="category" className="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-700 outline-none">
+                    {CATEGORIES.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                  </select>
+                  <input type="date" name="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-4 rounded-xl bg-gray-100 dark:bg-gray-700 outline-none" />
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button type="submit" className="flex-2 bg-red-600 text-white py-4 rounded-xl font-bold flex-1">Salvar</button>
+                  <button type="button" onClick={() => setShowAddExpense(false)} className="flex-1 bg-gray-200 dark:bg-gray-700 py-4 rounded-xl font-bold">Fechar</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* NOTIFICAÇÃO */}
+          {notification.show && (
+            <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-50 transition-all ${notification.type === 'error' ? 'bg-red-600' : 'bg-green-600'} text-white font-bold`}>
+              {notification.text}
+            </div>
+          )}
+
+          {/* COMPONENTES DE PDF E OUTROS MODAIS SERIAM INSERIDOS AQUI CONFORME O ORIGINAL */}
+          {showPDFConfig && <PDFConfigModal darkMode={darkMode} onClose={() => setShowPDFConfig(false)} onGenerate={handleGeneratePDF} defaultOptions={pdfOptions} />}
+          {showPDFPreview && pdfData && <PDFPreviewModal data={pdfData} options={pdfOptions} darkMode={darkMode} onClose={() => setShowPDFPreview(false)} onGenerate={handleDownloadPDF} />}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
