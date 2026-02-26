@@ -1,0 +1,2388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+  <title>Finanças 2026 - Gestão Inteligente</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-start: #4f46e5;
+      --brand-end: #7c3aed;
+      --brand-accent: #06b6d4;
+      --surface: #ffffff;
+      --surface-2: #f1f5f9;
+      --border: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --radius-card: 16px;
+      --radius-sm: 10px;
+    }
+    .dark {
+      --surface: #111827;
+      --surface-2: #0f172a;
+      --border: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+    * { font-family: 'Sora', sans-serif; box-sizing: border-box; }
+    body { background: var(--surface-2); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    .dark ::-webkit-scrollbar-thumb { background: #374151; }
+
+    .fade-in { animation: fadeIn 0.25s cubic-bezier(.4,0,.2,1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Header */
+    .app-header {
+      background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%) !important;
+      box-shadow: 0 4px 24px rgba(79,70,229,0.3) !important;
+    }
+    .dark .app-header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%) !important;
+    }
+    .month-nav {
+      background: rgba(255,255,255,0.14);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      display: flex; align-items: center; gap: 2px; padding: 3px 6px;
+    }
+    .month-nav button { color: #fff; border-radius: 999px; padding: 4px 8px; transition: background .15s; }
+    .month-nav button:hover { background: rgba(255,255,255,0.2); }
+    .month-nav span { color: #fff; font-weight: 600; font-size: .88rem; min-width: 148px; text-align: center; }
+    .header-action {
+      color: rgba(255,255,255,0.85) !important;
+      background: rgba(255,255,255,0.12) !important;
+      border: 1px solid rgba(255,255,255,0.18) !important;
+      border-radius: 10px !important; padding: 7px !important;
+      transition: all .15s !important;
+    }
+    .header-action:hover { background: rgba(255,255,255,0.22) !important; color: #fff !important; transform: translateY(-1px) !important; }
+
+    /* Cards & Surfaces */
+    .card-color-dot { display: inline-block; width: 9px; height: 9px; border-radius: 9999px; margin-right: 6px; }
+    .pdf-modal { max-height: 80vh; overflow-y: auto; }
+    .gradient-bg { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+    .shadow-soft {
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.07);
+    }
+    .dark .shadow-soft { box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4); }
+    .shadow-hover { transition: box-shadow .2s, transform .2s; }
+    .shadow-hover:hover { box-shadow: 0 16px 32px rgba(0,0,0,0.12); }
+    .card-hover { transition: all .2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
+
+    /* Stat cards */
+    .stat-card { position: relative; overflow: hidden; border-radius: var(--radius-card); padding: 18px 20px; transition: transform .2s, box-shadow .2s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card::after { content:''; position: absolute; top: -16px; right: -16px; width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+    .stat-label { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+    .stat-value { font-size: 1.55rem; font-weight: 700; font-family: 'Sora', sans-serif; margin-top: 4px; }
+
+    /* Misc */
+    .currency { font-family: 'Sora', sans-serif; font-weight: 600; }
+    .toggle-btn { font-size: .7rem; opacity: .55; padding: 2px 6px; border-radius: 6px; transition: opacity .15s, background .15s; }
+    .toggle-btn:hover { opacity: 1; background: rgba(0,0,0,0.06); }
+    .section-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+    .payment-row { border-radius: var(--radius-sm); padding: 10px 14px; transition: background .15s; }
+    .payment-row:hover { background: rgba(0,0,0,0.025) !important; }
+    .dark .payment-row:hover { background: rgba(255,255,255,0.03) !important; }
+    .fab { width: 54px; height: 54px; border-radius: 999px; background: linear-gradient(135deg, var(--brand-start), var(--brand-end)); box-shadow: 0 6px 20px rgba(79,70,229,.45); display: flex; align-items: center; justify-content: center; color: #fff; transition: transform .2s, box-shadow .2s; }
+    .fab:hover { transform: scale(1.08); box-shadow: 0 10px 28px rgba(79,70,229,.55); }
+    .quinzena-header { border-radius: var(--radius-card) var(--radius-card) 0 0; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-card { border-radius: 20px !important; }
+  </style>
+</head>
+<body class="antialiased" style="background:var(--surface-2)">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // ==================== ÍCONES (mantidos iguais) ====================
+    const Lock = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>);
+    const Unlock = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>);
+    const Plus = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>);
+    const Download = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v9m0-9l-4 4m4-4l4 4" /></svg>);
+    const Upload = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5-5 5 5M12 5v14" /></svg>);
+    const Left = () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>);
+    const Right = () => (<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>);
+    const ChartIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>);
+    const Sun = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>);
+    const Moon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>);
+    const DashboardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2zm0 4h16M7 15h2m4 0h2" /></svg>);
+    const HistoryIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>);
+    const CreditCardIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>);
+    const XIcon = () => (<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
+    const PDFIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>);
+
+    // ==================== DADOS FIXOS (mantidos iguais) ====================
+    const RECEIVER_COLORS = [
+      { id: 1, name: 'Azul', light: 'bg-blue-100 border-blue-300 text-blue-800', dark: 'bg-blue-900/30 border-blue-700 text-blue-200', color: '#3B82F6' },
+      { id: 2, name: 'Verde', light: 'bg-green-100 border-green-300 text-green-800', dark: 'bg-green-900/30 border-green-700 text-green-200', color: '#10B981' },
+      { id: 3, name: 'Vermelho', light: 'bg-red-100 border-red-300 text-red-800', dark: 'bg-red-900/30 border-red-700 text-red-200', color: '#EF4444' },
+      { id: 4, name: 'Amarelo', light: 'bg-yellow-100 border-yellow-300 text-yellow-800', dark: 'bg-yellow-900/30 border-yellow-700 text-yellow-200', color: '#F59E0B' },
+      { id: 5, name: 'Roxo', light: 'bg-purple-100 border-purple-300 text-purple-800', dark: 'bg-purple-900/30 border-purple-700 text-purple-200', color: '#8B5CF6' },
+      { id: 6, name: 'Rosa', light: 'bg-pink-100 border-pink-300 text-pink-800', dark: 'bg-pink-900/30 border-pink-700 text-pink-200', color: '#EC4899' },
+      { id: 7, name: 'Ciano', light: 'bg-cyan-100 border-cyan-300 text-cyan-800', dark: 'bg-cyan-900/30 border-cyan-700 text-cyan-200', color: '#06B6D4' },
+      { id: 8, name: 'Laranja', light: 'bg-orange-100 border-orange-300 text-orange-800', dark: 'bg-orange-900/30 border-orange-700 text-orange-200', color: '#F97316' },
+      { id: 9, name: 'Índigo', light: 'bg-indigo-100 border-indigo-300 text-indigo-800', dark: 'bg-indigo-900/30 border-indigo-700 text-indigo-200', color: '#6366F1' },
+      { id: 10, name: 'Verde-limão', light: 'bg-lime-100 border-lime-300 text-lime-800', dark: 'bg-lime-900/30 border-lime-700 text-lime-200', color: '#84CC16' }
+    ];
+
+    const CATEGORIES = [
+      { id: 'mercantil', name: '🛒 Mercantil', color: '#10b981', bgColor: 'bg-emerald-500', darkBgColor: 'bg-emerald-600', featured: true },
+      { id: 'lanches', name: '🍕 Lanches', color: '#f59e0b', bgColor: 'bg-amber-500', darkBgColor: 'bg-amber-600', featured: true },
+      { id: 'combustivel', name: '⛽ Combustível', color: '#ef4444', bgColor: 'bg-red-500', darkBgColor: 'bg-red-600', featured: true },
+      { id: 'cartao', name: '💳 Cartão de Crédito', color: '#8b5cf6', bgColor: 'bg-purple-500', darkBgColor: 'bg-purple-600', featured: true },
+      { id: 'dizimos_ofertas', name: '⛪ Dízimos e Ofertas', color: '#fbbf24', bgColor: 'bg-yellow-500', darkBgColor: 'bg-yellow-600' },
+      { id: 'mei', name: '🏭 MEI', color: '#a16207', bgColor: 'bg-yellow-700', darkBgColor: 'bg-yellow-800' },
+      { id: 'moradia', name: '🏠 Moradia', color: '#3b82f6', bgColor: 'bg-blue-500', darkBgColor: 'bg-blue-600' },
+      { id: 'alimentacao', name: '🍔 Alimentação', color: '#10b981', bgColor: 'bg-green-500', darkBgColor: 'bg-green-600' },
+      { id: 'transporte', name: '🚗 Transporte', color: '#f59e0b', bgColor: 'bg-yellow-500', darkBgColor: 'bg-yellow-600' },
+      { id: 'saude', name: '💊 Saúde', color: '#ef4444', bgColor: 'bg-pink-500', darkBgColor: 'bg-pink-600' },
+      { id: 'educacao', name: '📚 Educação', color: '#8b5cf6', bgColor: 'bg-indigo-500', darkBgColor: 'bg-indigo-600' },
+      { id: 'lazer', name: '🎮 Lazer', color: '#ec4899', bgColor: 'bg-rose-500', darkBgColor: 'bg-rose-600' },
+      { id: 'vestuario', name: '👕 Vestuário', color: '#06b6d4', bgColor: 'bg-cyan-500', darkBgColor: 'bg-cyan-600' },
+      { id: 'outros', name: '📦 Outros', color: '#6b7280', bgColor: 'bg-gray-500', darkBgColor: 'bg-gray-600' }
+    ];
+
+    const CARD_COLORS = [
+      '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1', '#14B8A6', '#8B5CF6', '#F43F5E', '#0EA5E9', '#A855F7'
+    ];
+
+    const SECTION_COLORS = {
+      entradas: { light: { bg: 'bg-emerald-50', border: 'border-emerald-200', header: 'bg-gradient-to-r from-emerald-500 to-teal-500', text: 'text-emerald-900' }, dark: { bg: 'dark:bg-emerald-900/20', border: 'dark:border-emerald-800', header: 'dark:from-emerald-600 dark:to-teal-600', text: 'dark:text-emerald-100' } },
+      reservas: { light: { bg: 'bg-sky-50', border: 'border-sky-200', header: 'bg-gradient-to-r from-sky-500 to-indigo-500', text: 'text-sky-900' }, dark: { bg: 'dark:bg-sky-900/20', border: 'dark:border-sky-800', header: 'dark:from-sky-600 dark:to-indigo-600', text: 'dark:text-sky-100' } },
+      contas: { light: { bg: 'bg-amber-50', border: 'border-amber-200', header: 'bg-gradient-to-r from-amber-500 to-orange-500', text: 'text-amber-900' }, dark: { bg: 'dark:bg-amber-900/20', border: 'dark:border-amber-800', header: 'dark:from-amber-600 dark:to-orange-600', text: 'dark:text-amber-100' } },
+      quinzena1: { light: { bg: 'bg-blue-50', border: 'border-blue-200', header: 'bg-gradient-to-r from-blue-500 to-cyan-500', text: 'text-blue-900' }, dark: { bg: 'dark:bg-blue-900/20', border: 'dark:border-blue-800', header: 'dark:from-blue-600 dark:to-cyan-600', text: 'dark:text-blue-100' } },
+      quinzena2: { light: { bg: 'bg-purple-50', border: 'border-purple-200', header: 'bg-gradient-to-r from-purple-500 to-pink-500', text: 'text-purple-900' }, dark: { bg: 'dark:bg-purple-900/20', border: 'dark:border-purple-800', header: 'dark:from-purple-600 dark:to-pink-600', text: 'dark:text-purple-100' } }
+    };
+
+    // ==================== FUNÇÕES UTILITÁRIAS (mantidas iguais) ====================
+    const parseCurrencyInput = (input) => {
+      if (!input || input === '') return '';
+      let expression = input.toString().replace(/\s+/g, '');
+      const hasOperators = /[+\-*\/]/.test(expression);
+      if (!hasOperators) {
+        const num = parseFloat(expression.replace(',', '.'));
+        return isNaN(num) ? '' : num;
+      }
+      try {
+        expression = expression.replace(/\./g, '').replace(/,/g, '.');
+        const result = eval(expression);
+        return Math.round(result * 100) / 100;
+      } catch (error) {
+        console.error('Erro no cálculo:', error);
+        return '';
+      }
+    };
+
+    const formatNumberForInput = (num) => {
+      if (num === '' || num === null || isNaN(Number(num))) return '';
+      return String(num).replace('.', ',');
+    };
+
+    const formatDateDisplay = (iso) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const day = String(d.getDate()).padStart(2,'0');
+      const month = String(d.getMonth() + 1).padStart(2,'0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
+    const isoFromDateInput = (value) => value ? new Date(value + 'T12:00:00').toISOString() : '';
+
+    const currencyFormat = (num) => {
+      if (num === '' || num === null || isNaN(Number(num))) return 'R$ 0,00';
+      return Number(num).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const monthFromKey = (key) => {
+      const [y,m] = key.split('-');
+      return new Date(Number(y), Number(m)-1, 1);
+    };
+
+    const getAccountMonths = (account) => {
+      if (!account.monthlyBalances || Object.keys(account.monthlyBalances).length === 0) return [];
+      return Object.keys(account.monthlyBalances).sort((a, b) => {
+        const [aYear, aMonth] = a.split('-').map(Number);
+        const [bYear, bMonth] = b.split('-').map(Number);
+        if (aYear !== bYear) return bYear - aYear;
+        return bMonth - aMonth;
+      });
+    };
+
+    const formatMonthKey = (key) => {
+      const [year, month] = key.split('-').map(Number);
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      return `${monthNames[month-1]}/${year}`;
+    };
+
+    const compareMonthKeys = (monthKey1, monthKey2) => {
+      const [year1, month1] = monthKey1.split('-').map(Number);
+      const [year2, month2] = monthKey2.split('-').map(Number);
+      if (year1 > year2) return 1;
+      if (year1 < year2) return -1;
+      if (month1 > month2) return 1;
+      if (month1 < month2) return -1;
+      return 0;
+    };
+
+    // ==================== FUNÇÕES DE PDF (mantidas iguais) ====================
+    const generatePDF = (data, options) => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 20;
+      const contentWidth = pageWidth - 2 * margin;
+      const primaryColor = [41, 128, 185];
+      const secondaryColor = [52, 152, 219];
+      const successColor = [39, 174, 96];
+      const dangerColor = [231, 76, 60];
+      const warningColor = [243, 156, 18];
+      const grayColor = [127, 140, 141];
+      
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, pageWidth, 60, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório Financeiro', pageWidth / 2, 25, { align: 'center' });
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Período: ${data.period}`, pageWidth / 2, 40, { align: 'center' });
+      doc.text(`Gerado em: ${data.generatedDate}`, pageWidth / 2, 48, { align: 'center' });
+      
+      let yPos = 80;
+      
+      doc.setFontSize(18);
+      doc.setTextColor(...primaryColor);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumo Financeiro', margin, yPos);
+      yPos += 10;
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(...primaryColor);
+      doc.line(margin, yPos, margin + 50, yPos);
+      yPos += 15;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      
+      const summaryData = [
+        ['Total de Entradas', currencyFormat(data.summary.totalEntries)],
+        ['Total de Despesas', currencyFormat(data.summary.totalExpenses)],
+        ['Saldo do Mês', currencyFormat(data.summary.monthBalance)],
+        ['Contas Pagas', `${data.summary.paidCount} / ${data.summary.totalCount}`],
+        ['Valor Pago', currencyFormat(data.summary.paidAmount)],
+        ['Valor Pendente', currencyFormat(data.summary.pendingAmount)]
+      ];
+      
+      summaryData.forEach(([label, value], index) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, margin, yPos);
+        doc.setFont('helvetica', 'normal');
+        
+        if (label.includes('Saldo')) {
+          const color = data.summary.monthBalance >= 0 ? successColor : dangerColor;
+          doc.setTextColor(...color);
+        } else if (label.includes('Pendente')) {
+          doc.setTextColor(...dangerColor);
+        } else if (label.includes('Pago')) {
+          doc.setTextColor(...successColor);
+        } else {
+          doc.setTextColor(0, 0, 0);
+        }
+        
+        doc.text(value, pageWidth - margin, yPos, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        yPos += 8;
+      });
+      
+      yPos += 10;
+      
+      if (options.includeCategories && data.categories && data.categories.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Despesas por Categoria', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 70, yPos);
+        yPos += 15;
+        doc.setFontSize(10);
+        
+        data.categories.forEach((cat, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          const barWidth = contentWidth * 0.6;
+          const filledWidth = (cat.value / data.summary.totalExpenses) * barWidth;
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(cat.label, margin, yPos);
+          doc.text(currencyFormat(cat.value), pageWidth - margin, yPos, { align: 'right' });
+          
+          yPos += 5;
+          
+          doc.setFillColor(230, 230, 230);
+          doc.rect(margin, yPos, barWidth, 5, 'F');
+          
+          let barColor;
+          if (cat.label.includes('Mercantil')) barColor = successColor;
+          else if (cat.label.includes('Lanches')) barColor = warningColor;
+          else if (cat.label.includes('Combustível')) barColor = dangerColor;
+          else if (cat.label.includes('Cartão')) barColor = [155, 89, 182];
+          else barColor = secondaryColor;
+          
+          doc.setFillColor(...barColor);
+          doc.rect(margin, yPos, filledWidth, 5, 'F');
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(100, 100, 100);
+          const percentage = ((cat.value / data.summary.totalExpenses) * 100).toFixed(1);
+          doc.text(`${percentage}%`, margin + barWidth + 5, yPos + 3.5);
+          
+          doc.setFontSize(10);
+          yPos += 12;
+        });
+        
+        yPos += 10;
+      }
+      
+      if (options.includePayments && data.payments && data.payments.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Contas do Mês', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 40, yPos);
+        yPos += 15;
+        doc.setFontSize(9);
+        
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, yPos, contentWidth, 8, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Descrição', margin + 2, yPos + 5.5);
+        doc.text('Data', margin + contentWidth * 0.5, yPos + 5.5);
+        doc.text('Valor', margin + contentWidth * 0.7, yPos + 5.5);
+        doc.text('Status', margin + contentWidth * 0.85, yPos + 5.5);
+        
+        yPos += 10;
+        
+        data.payments.forEach((payment, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          if (index % 2 === 0) {
+            doc.setFillColor(250, 250, 250);
+            doc.rect(margin, yPos - 2, contentWidth, 8, 'F');
+          }
+          
+          let description = payment.title;
+          if (description.length > 30) {
+            description = description.substring(0, 27) + '...';
+          }
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(0, 0, 0);
+          doc.text(description, margin + 2, yPos + 5.5);
+          doc.text(payment.date, margin + contentWidth * 0.5, yPos + 5.5);
+          doc.text(currencyFormat(payment.amount), margin + contentWidth * 0.7, yPos + 5.5);
+          
+          if (payment.paid) {
+            doc.setTextColor(...successColor);
+            doc.text('Pago', margin + contentWidth * 0.85, yPos + 5.5);
+          } else {
+            doc.setTextColor(...dangerColor);
+            doc.text('Pendente', margin + contentWidth * 0.85, yPos + 5.5);
+          }
+          
+          yPos += 8;
+        });
+        
+        yPos += 10;
+      }
+      
+      if (options.includeCreditCards && data.creditCards && data.creditCards.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Cartões de Crédito', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 60, yPos);
+        yPos += 15;
+        doc.setFontSize(10);
+        
+        data.creditCards.forEach((card, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(`${card.name} (Vence dia ${card.dueDay})`, margin, yPos);
+          yPos += 7;
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...grayColor);
+          doc.text(`Fatura do mês: ${currencyFormat(card.currentMonth)}`, margin + 10, yPos);
+          yPos += 5;
+          doc.text(`Dívida futura: ${currencyFormat(card.future)}`, margin + 10, yPos);
+          yPos += 5;
+          if (card.totalActiveDebt > 0) {
+            doc.setTextColor(...dangerColor);
+            doc.text(`Total pendente: ${currencyFormat(card.totalActiveDebt)}`, margin + 10, yPos);
+            doc.setTextColor(...grayColor);
+          }
+          yPos += 10;
+        });
+        
+        yPos += 5;
+      }
+      
+      if (options.includeInstallments && data.installments && data.installments.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Compras Parceladas', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 60, yPos);
+        yPos += 15;
+        doc.setFontSize(9);
+        
+        data.installments.forEach((purchase, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(purchase.title, margin, yPos);
+          yPos += 5;
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...grayColor);
+          doc.text(`Cartão: ${purchase.cardName} | ${purchase.paidCount}/${purchase.totalInstallments} parcelas`, margin + 5, yPos);
+          yPos += 4;
+          doc.text(`Início: ${purchase.startMonth} | Restam: ${currencyFormat(purchase.remainingAmount)}`, margin + 5, yPos);
+          
+          doc.setFontSize(9);
+          yPos += 8;
+        });
+        
+        yPos += 5;
+      }
+      
+      if (options.includeAccounts && data.accounts && data.accounts.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Contas Bancárias', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 55, yPos);
+        yPos += 15;
+        doc.setFontSize(10);
+        
+        data.accounts.forEach((account, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(account.name, margin, yPos);
+          
+          doc.setFont('helvetica', 'normal');
+          const balanceColor = account.balance >= 0 ? successColor : dangerColor;
+          doc.setTextColor(...balanceColor);
+          doc.text(currencyFormat(account.balance), pageWidth - margin, yPos, { align: 'right' });
+          
+          doc.setTextColor(0, 0, 0);
+          yPos += 8;
+        });
+        
+        yPos += 5;
+      }
+      
+      if (options.includeEntries && data.entries && data.entries.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Entradas do Mês', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 55, yPos);
+        yPos += 15;
+        doc.setFontSize(10);
+        
+        data.entries.forEach((entry, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(entry.name, margin, yPos);
+          yPos += 5;
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...grayColor);
+          doc.text(`Data: ${entry.date}`, margin + 5, yPos);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(...successColor);
+          doc.text(currencyFormat(entry.amount), pageWidth - margin, yPos - 5, { align: 'right' });
+          
+          doc.setTextColor(0, 0, 0);
+          yPos += 8;
+        });
+        
+        yPos += 5;
+      }
+      
+      if (options.includeReservations && data.reservations && data.reservations.length > 0) {
+        if (yPos > 250) { doc.addPage(); yPos = 20; }
+        
+        doc.setFontSize(18);
+        doc.setTextColor(...primaryColor);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Reservas Financeiras', margin, yPos);
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(...primaryColor);
+        doc.line(margin, yPos, margin + 65, yPos);
+        yPos += 15;
+        doc.setFontSize(10);
+        
+        data.reservations.forEach((reservation, index) => {
+          if (yPos > 270) { doc.addPage(); yPos = 20; }
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0);
+          doc.text(reservation.name, margin, yPos);
+          yPos += 5;
+          
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...grayColor);
+          doc.text(`Data: ${reservation.date}`, margin + 5, yPos);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(52, 152, 219);
+          doc.text(currencyFormat(reservation.amount), pageWidth - margin, yPos - 5, { align: 'right' });
+          
+          doc.setTextColor(0, 0, 0);
+          yPos += 8;
+        });
+      }
+      
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(10);
+        doc.setTextColor(...grayColor);
+        doc.text(
+          `Página ${i} de ${totalPages}`,
+          pageWidth / 2,
+          doc.internal.pageSize.height - 10,
+          { align: 'center' }
+        );
+        doc.setLineWidth(0.5);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(
+          margin,
+          doc.internal.pageSize.height - 15,
+          pageWidth - margin,
+          doc.internal.pageSize.height - 15
+        );
+      }
+      
+      const fileName = `relatorio-financeiro-${data.period.replace('/', '-')}.pdf`;
+      doc.save(fileName);
+    };
+
+    // ==================== COMPONENTES AUXILIARES (mantidos iguais) ====================
+    const PDFPreviewModal = ({ data, options, darkMode, onClose, onGenerate }) => {
+      if (!data) return null;
+      return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+          <div className={`w-full max-w-4xl rounded-2xl shadow-2xl pdf-modal ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Pré-visualização do Relatório</h2>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                  <XIcon />
+                </button>
+              </div>
+              <div className="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                <h3 className="font-bold text-blue-800 dark:text-blue-200 mb-2">Configurações do Relatório</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                  {Object.entries(options).map(([key, value]) => {
+                    let label = '';
+                    switch(key) {
+                      case 'includeCategories': label = 'Categorias'; break;
+                      case 'includePayments': label = 'Contas'; break;
+                      case 'includeCreditCards': label = 'Cartões'; break;
+                      case 'includeInstallments': label = 'Parcelas'; break;
+                      case 'includeAccounts': label = 'Contas Bancárias'; break;
+                      case 'includeEntries': label = 'Entradas'; break;
+                      case 'includeReservations': label = 'Reservas'; break;
+                      default: label = key.replace('include', '').replace(/([A-Z])/g, ' $1').trim();
+                    }
+                    return (
+                      <div key={key} className="flex items-center">
+                        <div className={`w-3 h-3 rounded-full mr-2 ${value ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className="text-center p-6 rounded-xl gradient-bg text-white shadow-lg">
+                  <h1 className="text-3xl font-bold mb-2">Relatório Financeiro</h1>
+                  <p className="text-lg opacity-90">Período: {data.period}</p>
+                  <p className="text-sm opacity-75">Gerado em: {data.generatedDate}</p>
+                </div>
+                <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Resumo Financeiro</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Entradas</p>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">{currencyFormat(data.summary.totalEntries)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Despesas</p>
+                      <p className="text-xl font-bold text-red-600 dark:text-red-400">{currencyFormat(data.summary.totalExpenses)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Saldo do Mês</p>
+                      <p className={`text-xl font-bold ${data.summary.monthBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {currencyFormat(data.summary.monthBalance)}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Contas Pagas</p>
+                      <p className="text-xl font-bold">{data.summary.paidCount} / {data.summary.totalCount}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Valor Pago</p>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">{currencyFormat(data.summary.paidAmount)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Valor Pendente</p>
+                      <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{currencyFormat(data.summary.pendingAmount)}</p>
+                    </div>
+                  </div>
+                </div>
+                {options.includeCategories && data.categories && data.categories.length > 0 && (
+                  <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Despesas por Categoria</h3>
+                    <div className="space-y-3">
+                      {data.categories.map((cat, index) => {
+                        const percentage = data.summary.totalExpenses > 0 ? ((cat.value / data.summary.totalExpenses) * 100).toFixed(1) : 0;
+                        return (
+                          <div key={index} className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="font-medium">{cat.label}</span>
+                              <span className="font-bold">{currencyFormat(cat.value)}</span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                              <div className="h-2.5 rounded-full" style={{ width: `${percentage}%`, backgroundColor: cat.color || '#3b82f6' }}></div>
+                            </div>
+                            <div className="text-right text-sm text-gray-500 dark:text-gray-400">{percentage}% do total</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {options.includePayments && data.payments && data.payments.length > 0 && (
+                  <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Contas do Mês ({data.payments.length})</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b dark:border-gray-700">
+                            <th className="text-left py-2">Descrição</th>
+                            <th className="text-left py-2">Data</th>
+                            <th className="text-left py-2">Valor</th>
+                            <th className="text-left py-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.payments.slice(0, 5).map((payment, index) => (
+                            <tr key={index} className="border-b dark:border-gray-700">
+                              <td className="py-2">{payment.title}</td>
+                              <td className="py-2">{payment.date}</td>
+                              <td className="py-2">{currencyFormat(payment.amount)}</td>
+                              <td className="py-2">
+                                <span className={`px-2 py-1 rounded text-xs ${payment.paid ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                                  {payment.paid ? 'Pago' : 'Pendente'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                          {data.payments.length > 5 && (
+                            <tr>
+                              <td colSpan="4" className="py-2 text-center text-gray-500 dark:text-gray-400">
+                                ... e mais {data.payments.length - 5} conta(s)
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                {options.includeCreditCards && data.creditCards && data.creditCards.length > 0 && (
+                  <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Cartões de Crédito</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {data.creditCards.map((card, index) => (
+                        <div key={index} className="p-3 rounded-lg border border-gray-300 dark:border-gray-600">
+                          <h4 className="font-bold mb-2">{card.name}</h4>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between"><span>Vencimento:</span><span>Dia {card.dueDay}</span></div>
+                            <div className="flex justify-between"><span>Fatura deste mês:</span><span className="font-bold">{currencyFormat(card.currentMonth)}</span></div>
+                            <div className="flex justify-between"><span>Dívida futura:</span><span>{currencyFormat(card.future)}</span></div>
+                            {card.totalActiveDebt > 0 && (
+                              <div className="flex justify-between"><span>Total pendente:</span><span className="font-bold text-red-600 dark:text-red-400">{currencyFormat(card.totalActiveDebt)}</span></div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="p-4 rounded-xl border border-gray-300 dark:border-gray-600 text-center text-gray-500 dark:text-gray-400 text-sm">
+                  <p>Este relatório foi gerado automaticamente pelo Sistema de Controle de Finanças</p>
+                  <p className="mt-1">Total de páginas estimado: {Object.values(options).filter(v => v).length + 2}</p>
+                </div>
+              </div>
+              <div className="mt-8 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <button onClick={onGenerate} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold transition-all shadow-md flex items-center justify-center space-x-2">
+                  <Download /><span>Gerar e Baixar PDF</span>
+                </button>
+                <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold transition-all shadow-md">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const PDFConfigModal = ({ darkMode, onClose, onGenerate, defaultOptions }) => {
+      const [options, setOptions] = useState(defaultOptions);
+      const toggleOption = (option) => setOptions(prev => ({ ...prev, [option]: !prev[option] }));
+      const selectAll = () => setOptions({ includeCategories: true, includePayments: true, includeCreditCards: true, includeInstallments: true, includeAccounts: true, includeEntries: true, includeReservations: true });
+      const deselectAll = () => setOptions({ includeCategories: false, includePayments: false, includeCreditCards: false, includeInstallments: false, includeAccounts: false, includeEntries: false, includeReservations: false });
+      
+      return (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Gerar Relatório PDF</h2>
+                <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                  <XIcon />
+                </button>
+              </div>
+              <div className="mb-6">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">Selecione as seções que deseja incluir no relatório:</p>
+                <div className="space-y-3">
+                  {Object.entries(options).map(([key, value]) => {
+                    let label = '';
+                    switch(key) {
+                      case 'includeCategories': label = 'Categorias'; break;
+                      case 'includePayments': label = 'Contas do Mês'; break;
+                      case 'includeCreditCards': label = 'Cartões de Crédito'; break;
+                      case 'includeInstallments': label = 'Compras Parceladas'; break;
+                      case 'includeAccounts': label = 'Contas Bancárias'; break;
+                      case 'includeEntries': label = 'Entradas'; break;
+                      case 'includeReservations': label = 'Reservas'; break;
+                      default: label = key.replace('include', '').replace(/([A-Z])/g, ' $1').trim();
+                    }
+                    return (
+                      <div key={key} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                          <input type="checkbox" checked={value} onChange={() => toggleOption(key)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                          <span className="font-medium">{label}</span>
+                        </label>
+                        <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex space-x-3 mb-6">
+                <button onClick={selectAll} className="flex-1 py-2 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 font-medium transition hover:bg-blue-200 dark:hover:bg-blue-800">Selecionar Tudo</button>
+                <button onClick={deselectAll} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200 font-medium transition hover:bg-gray-200 dark:hover:bg-gray-800">Desmarcar Tudo</button>
+              </div>
+              <div className="flex space-x-3">
+                <button onClick={() => onGenerate(options)} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold transition-all shadow-md">Gerar Relatório</button>
+                <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold transition-all shadow-md">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ReceiverColorPicker = ({ selectedColor, onColorSelect }) => {
+      return (
+        <div className="space-y-3">
+          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Escolha uma cor para o recebedor:</div>
+          <div className="grid grid-cols-5 gap-2">
+            {RECEIVER_COLORS.map((colorOption) => (
+              <button key={colorOption.id} type="button" onClick={() => onColorSelect(colorOption)} className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor?.id === colorOption.id ? 'border-gray-800 dark:border-white scale-110 ring-2 ring-offset-2 ring-blue-500' : 'border-gray-300 dark:border-gray-600 hover:scale-105'}`} style={{ backgroundColor: colorOption.color }} title={colorOption.name} />
+            ))}
+          </div>
+          {selectedColor && (
+            <div className="flex items-center space-x-2 p-2 rounded bg-gray-100 dark:bg-gray-700">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: selectedColor.color }}></div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Cor selecionada: {selectedColor.name}</span>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    function PieChart({ data, title }) {
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
+      useEffect(() => {
+        if (!canvasRef.current) return;
+        if (chartRef.current) chartRef.current.destroy();
+        const ctx = canvasRef.current.getContext('2d');
+        chartRef.current = new Chart(ctx, {
+          type: 'pie',
+          data: { labels: data.map(d => d.label), datasets: [{ data: data.map(d => d.value), backgroundColor: data.map(d => d.color), borderWidth: 2, borderColor: '#fff' }] },
+          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } }, title: { display: true, text: title, font: { size: 14, weight: 'bold' } } } }
+        });
+        return () => chartRef.current && chartRef.current.destroy();
+      }, [data, title]);
+      return <canvas ref={canvasRef} />;
+    }
+
+    function BarChart({ data, title }) {
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
+      useEffect(() => {
+        if (!canvasRef.current) return;
+        if (chartRef.current) chartRef.current.destroy();
+        const ctx = canvasRef.current.getContext('2d');
+        chartRef.current = new Chart(ctx, {
+          type: 'bar',
+          data: { labels: data.labels, datasets: [
+            { label: 'Entradas', data: data.entries, backgroundColor: '#10b981', borderRadius: 4 },
+            { label: 'Despesas', data: data.expenses, backgroundColor: '#ef4444', borderRadius: 4 }
+          ] },
+          options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' }, title: { display: true, text: title, font: { size: 14, weight: 'bold' } } }, scales: { y: { beginAtZero: true, ticks: { callback: (value) => currencyFormat(value) } } } }
+        });
+        return () => chartRef.current && chartRef.current.destroy();
+      }, [data, title]);
+      return <canvas ref={canvasRef} />;
+    }
+
+    const LoginScreen = ({ onLogin, darkMode, hasPassword }) => {
+      const [input, setInput] = useState('');
+      const [error, setError] = useState(false);
+      const handleSubmit = (e) => { e.preventDefault(); onLogin(input, setError); };
+      return (
+        <div className={`min-h-screen flex items-center justify-center p-4`} style={{background: darkMode ? 'linear-gradient(135deg,#0f172a,#1e1b4b)' : 'linear-gradient(135deg,#eef2ff,#f5f3ff)'}}>
+          <div className={`w-full max-w-sm p-8 rounded-3xl shadow-2xl fade-in ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`} style={{boxShadow:'0 24px 64px rgba(79,70,229,.18)'}}>
+            <div className="flex justify-center mb-6">
+              <div className="p-4 rounded-2xl" style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)'}}><Lock /></div>
+            </div>
+            <h2 className="text-2xl font-800 text-center mb-1" style={{fontWeight:800}}>Acesso Protegido</h2>
+            <p className="text-center text-sm mb-6 opacity-60">Digite sua senha para continuar</p>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <input type="password" value={input} onChange={(e) => { setInput(e.target.value); setError(false); }} className={`w-full px-4 py-3 rounded-xl border text-center text-lg tracking-widest outline-none transition ${error ? 'border-red-500' : darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`} style={{borderWidth:'1.5px'}} placeholder="••••" autoFocus />
+                {error && <p className="text-red-500 text-xs text-center mt-2">Senha incorreta</p>}
+              </div>
+              <button type="submit" className="w-full py-3 rounded-xl text-white font-700 transition-all" style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)',fontWeight:700,boxShadow:'0 4px 16px rgba(79,70,229,.35)'}}>DESBLOQUEAR</button>
+            </form>
+            <div className="mt-6 text-center text-xs opacity-40">Esqueceu? Limpe os dados do navegador para resetar (atenção: apaga tudo).</div>
+          </div>
+        </div>
+      );
+    };
+
+    const ColorPicker = ({ selectedColor, onColorSelect }) => {
+      return (
+        <div className="space-y-3">
+          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Escolha uma cor para o cartão:</div>
+          <div className="grid grid-cols-5 gap-2">
+            {CARD_COLORS.map((color, index) => (
+              <button key={index} type="button" onClick={() => onColorSelect(color)} className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color ? 'border-gray-800 dark:border-white scale-110 ring-2 ring-offset-2 ring-blue-500' : 'border-gray-300 dark:border-gray-600 hover:scale-105'}`} style={{ backgroundColor: color }} title={`Cor ${index + 1}`} />
+            ))}
+          </div>
+          {selectedColor && (
+            <div className="flex items-center space-x-2 p-2 rounded bg-gray-100 dark:bg-gray-700">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: selectedColor }}></div>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Cor selecionada: {selectedColor}</span>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const MonthYearPicker = ({ value, onChange }) => {
+      const currentYear = new Date().getFullYear();
+      const years = Array.from({ length: 10 }, (_, i) => currentYear + i);
+      const months = [
+        { value: '01', label: 'Janeiro' }, { value: '02', label: 'Fevereiro' }, { value: '03', label: 'Março' },
+        { value: '04', label: 'Abril' }, { value: '05', label: 'Maio' }, { value: '06', label: 'Junho' },
+        { value: '07', label: 'Julho' }, { value: '08', label: 'Agosto' }, { value: '09', label: 'Setembro' },
+        { value: '10', label: 'Outubro' }, { value: '11', label: 'Novembro' }, { value: '12', label: 'Dezembro' }
+      ];
+      const [year, month] = value ? value.split('-') : [currentYear.toString(), '01'];
+      const handleMonthChange = (e) => onChange(`${year}-${e.target.value}`);
+      const handleYearChange = (e) => onChange(`${e.target.value}-${month}`);
+      
+      return (
+        <div className="flex space-x-2">
+          <select value={month} onChange={handleMonthChange} className="flex-1 p-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition">{months.map(m => (<option key={m.value} value={m.value}>{m.label}</option>))}</select>
+          <select value={year} onChange={handleYearChange} className="flex-1 p-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 transition">{years.map(y => (<option key={y} value={y}>{y}</option>))}</select>
+        </div>
+      );
+    };
+
+    // ==================== COMPONENTE PRINCIPAL (APP) ====================
+    function App(){
+      // === ESTADOS DE AUTENTICAÇÃO ===
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+      const [appPassword, setAppPassword] = useState(() => localStorage.getItem('financas_app_password') || null);
+      const [showPasswordModal, setShowPasswordModal] = useState(false);
+      const [passwordForm, setPasswordForm] = useState({ current: '', new: '', confirm: '' });
+
+      useEffect(() => { if (!appPassword) setIsAuthenticated(true); }, [appPassword]);
+
+      const handleLogin = (inputPassword, onError) => { if (btoa(inputPassword) === appPassword) setIsAuthenticated(true); else onError(true); };
+      const handleSetPassword = () => {
+        if (passwordForm.new !== passwordForm.confirm) { notify('As senhas não coincidem', 'error'); return; }
+        if (passwordForm.new === '') {
+          if (confirm('Tem certeza que deseja remover a proteção por senha?')) { localStorage.removeItem('financas_app_password'); setAppPassword(null); setShowPasswordModal(false); notify('Senha removida com sucesso!'); setIsAuthenticated(true); }
+          return;
+        }
+        const encoded = btoa(passwordForm.new);
+        localStorage.setItem('financas_app_password', encoded);
+        setAppPassword(encoded);
+        setShowPasswordModal(false);
+        setPasswordForm({ current: '', new: '', confirm: '' });
+        notify('Senha configurada com sucesso!');
+      };
+
+      // === ESTADOS ORIGINAIS ===
+      const [payments, setPayments] = useState(() => { const saved = localStorage.getItem('financas_payments'); return saved ? JSON.parse(saved) : []; });
+      const [templatesFixed, setTemplatesFixed] = useState(() => {
+        const saved = localStorage.getItem('financas_templatesFixed');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.map(template => ({ ...template, startMonthKey: template.startMonthKey || selectedMonthKey, occurrences: template.occurrences || null, endMonthKey: template.endMonthKey || null }));
+        }
+        return [];
+      });
+      const [entries, setEntries] = useState(() => {
+        const saved = localStorage.getItem('financas_entries');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.map(entry => ({ ...entry, receivedBy: entry.receivedBy || '', receiverColor: entry.receiverColor || RECEIVER_COLORS[0] }));
+        }
+        return [];
+      });
+      const [reservations, setReservations] = useState(() => { const saved = localStorage.getItem('financas_reservations'); return saved ? JSON.parse(saved) : []; });
+      const [selectedMonthKey, setSelectedMonthKey] = useState(() => {
+        const saved = localStorage.getItem('financas_selectedMonthKey');
+        if (saved) return saved;
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      });
+      const [showAddPayment, setShowAddPayment] = useState(false);
+      const [showAddEntry, setShowAddEntry] = useState(false);
+      const [showAddReservation, setShowAddReservation] = useState(false);
+      const [editingPayment, setEditingPayment] = useState(null);
+      const [editingEntry, setEditingEntry] = useState(null);
+      const [editingReservation, setEditingReservation] = useState(null);
+      const [formPayment, setFormPayment] = useState({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '', startMonthKey: selectedMonthKey, occurrences: '', endMonthKey: '' });
+      const [formEntry, setFormEntry] = useState({ name:'', amount:'', date:'', notes:'', receivedBy: '', receiverColor: RECEIVER_COLORS[0] });
+      const [formReservation, setFormReservation] = useState({ name:'', amount:'', date:'', notes:'' });
+      const [search, setSearch] = useState('');
+      const [alertDaysBefore, setAlertDaysBefore] = useState(() => { const saved = localStorage.getItem('financas_alertDaysBefore'); return saved ? Number(saved) : 3; });
+      const [notification, setNotification] = useState({ show:false, text:'', type:'success' });
+      const [reminders, setReminders] = useState([]);
+      const [viewFilter, setViewFilter] = useState('month');
+      const [showFixedAccounts, setShowFixedAccounts] = useState(false);
+      const [showAnalytics, setShowAnalytics] = useState(false);
+      const [categoryFilter, setCategoryFilter] = useState('all');
+      const [categoryGoals, setCategoryGoals] = useState(() => { const saved = localStorage.getItem('financas_categoryGoals'); return saved ? JSON.parse(saved) : {}; });
+      const [showGoalsManager, setShowGoalsManager] = useState(false);
+      const [editingGoal, setEditingGoal] = useState(null);
+      const [installments, setInstallments] = useState(() => { const saved = localStorage.getItem('financas_installments'); return saved ? JSON.parse(saved) : []; });
+      const [accounts, setAccounts] = useState(() => {
+        const saved = localStorage.getItem('financas_accounts');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.map(account => {
+            if (account.balance !== undefined && !account.monthlyBalances) {
+              return { ...account, monthlyBalances: { [selectedMonthKey]: account.balance } };
+            }
+            if (!account.monthlyBalances) { return { ...account, monthlyBalances: {} }; }
+            return account;
+          });
+        }
+        return [];
+      });
+      const [showAddAccount, setShowAddAccount] = useState(false);
+      const [editingAccount, setEditingAccount] = useState(null);
+      const [formAccount, setFormAccount] = useState({ name:'', balance:'' });
+      const [showAddInstallment, setShowAddInstallment] = useState(false);
+      const [formInstallment, setFormInstallment] = useState({ title:'', totalAmount:'', installmentCount:'', firstDueDay:'', category:'outros', notes:'' });
+      const [darkMode, setDarkMode] = useState(() => { const saved = localStorage.getItem('financas_darkMode'); return saved ? JSON.parse(saved) : false; });
+      const [showDashboard, setShowDashboard] = useState(false);
+      const [showBudgetManager, setShowBudgetManager] = useState(false);
+      const [categoryBudgets, setCategoryBudgets] = useState(() => { const saved = localStorage.getItem('financas_categoryBudgets'); return saved ? JSON.parse(saved) : {}; });
+      const [sectionVisibility, setSectionVisibility] = useState(() => {
+        const saved = localStorage.getItem('financas_sectionVisibility');
+        return saved ? JSON.parse(saved) : { accounts: true, entries: true, reservations: true, quinzena1: true, quinzena2: true, fixedAccounts: true, creditCardsSummary: true, creditCardsPurchases: true };
+      });
+      const [expandedCardGroups, setExpandedCardGroups] = useState(() => { const saved = localStorage.getItem('financas_expandedCardGroups'); return saved ? JSON.parse(saved) : {}; });
+      const [showAccountHistory, setShowAccountHistory] = useState(null);
+      const [creditCards, setCreditCards] = useState(() => {
+        const saved = localStorage.getItem('financas_creditCards');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return parsed.map(card => ({ ...card, color: (!card.color || card.color === '#') ? CARD_COLORS[Math.floor(Math.random() * CARD_COLORS.length)] : card.color }));
+        }
+        return [];
+      });
+      const [creditCardPurchases, setCreditCardPurchases] = useState(() => { const saved = localStorage.getItem('financas_creditCardPurchases'); return saved ? JSON.parse(saved) : []; });
+      const [editingCreditPurchase, setEditingCreditPurchase] = useState(null);
+      const [showCreditCards, setShowCreditCards] = useState(false);
+      const [showAddCreditCard, setShowAddCreditCard] = useState(false);
+      const [showAddCreditPurchase, setShowAddCreditPurchase] = useState(false);
+      const [editingCreditCard, setEditingCreditCard] = useState(null);
+      const [formCreditCard, setFormCreditCard] = useState({ name: '', dueDay: '', color: CARD_COLORS[0] });
+      const [formCreditPurchase, setFormCreditPurchase] = useState({ title: '', totalAmount: '', installmentCount: '', firstDueMonth: selectedMonthKey, cardId: '', category: 'cartao' });
+      const [showPDFConfig, setShowPDFConfig] = useState(false);
+      const [showPDFPreview, setShowPDFPreview] = useState(false);
+      const [pdfData, setPdfData] = useState(null);
+      const [pdfOptions, setPdfOptions] = useState({ includeCategories: true, includePayments: true, includeCreditCards: true, includeInstallments: true, includeAccounts: true, includeEntries: true, includeReservations: true });
+
+      const daysInMonth = (year, monthIndex) => new Date(year, monthIndex+1, 0).getDate();
+      const monthKeyFromIso = (iso) => { if (!iso) return null; const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+      const getLightColor = (hexColor) => hexColor + '10';
+      const getBorderColor = (hexColor) => hexColor + '40';
+      const getTextColorClass = (hexColor) => 'text-gray-800 dark:text-gray-200';
+
+      useEffect(() => { if (darkMode) document.body.classList.add('dark'); else document.body.classList.remove('dark'); }, [darkMode]);
+      useEffect(() => { localStorage.setItem('financas_payments', JSON.stringify(payments)); }, [payments]);
+      useEffect(() => { localStorage.setItem('financas_templatesFixed', JSON.stringify(templatesFixed)); }, [templatesFixed]);
+      useEffect(() => { localStorage.setItem('financas_entries', JSON.stringify(entries)); }, [entries]);
+      useEffect(() => { localStorage.setItem('financas_reservations', JSON.stringify(reservations)); }, [reservations]);
+      useEffect(() => { localStorage.setItem('financas_selectedMonthKey', selectedMonthKey); }, [selectedMonthKey]);
+      useEffect(() => { localStorage.setItem('financas_alertDaysBefore', String(alertDaysBefore)); }, [alertDaysBefore]);
+      useEffect(() => { localStorage.setItem('financas_categoryGoals', JSON.stringify(categoryGoals)); }, [categoryGoals]);
+      useEffect(() => { localStorage.setItem('financas_installments', JSON.stringify(installments)); }, [installments]);
+      useEffect(() => { localStorage.setItem('financas_accounts', JSON.stringify(accounts)); }, [accounts]);
+      useEffect(() => { localStorage.setItem('financas_darkMode', JSON.stringify(darkMode)); }, [darkMode]);
+      useEffect(() => { localStorage.setItem('financas_categoryBudgets', JSON.stringify(categoryBudgets)); }, [categoryBudgets]);
+      useEffect(() => { localStorage.setItem('financas_sectionVisibility', JSON.stringify(sectionVisibility)); }, [sectionVisibility]);
+      useEffect(() => { localStorage.setItem('financas_creditCards', JSON.stringify(creditCards)); }, [creditCards]);
+      useEffect(() => { localStorage.setItem('financas_creditCardPurchases', JSON.stringify(creditCardPurchases)); }, [creditCardPurchases]);
+      useEffect(() => { localStorage.setItem('financas_expandedCardGroups', JSON.stringify(expandedCardGroups)); }, [expandedCardGroups]);
+
+      const shouldGenerateFixedPayment = (template, monthKey) => {
+        if (compareMonthKeys(monthKey, template.startMonthKey) < 0) return false;
+        if (template.endMonthKey && compareMonthKeys(monthKey, template.endMonthKey) > 0) return false;
+        if (template.occurrences && template.occurrences > 0) {
+          const startDate = monthFromKey(template.startMonthKey);
+          const currentDate = monthFromKey(monthKey);
+          const diffMonths = (currentDate.getFullYear() - startDate.getFullYear()) * 12 + (currentDate.getMonth() - startDate.getMonth());
+          if (diffMonths >= template.occurrences) return false;
+        }
+        return true;
+      };
+
+      useEffect(() => {
+        if (!selectedMonthKey) return;
+        const newPayments = [...payments];
+        let added = 0;
+        templatesFixed.forEach(tpl => {
+          if (!shouldGenerateFixedPayment(tpl, selectedMonthKey)) return;
+          const exists = payments.some(p => p.templateId === tpl.id && selectedMonthKey === monthKeyFromIso(p.dueDateIso));
+          if (!exists) {
+            const [y, m] = selectedMonthKey.split('-').map(Number);
+            const day = Math.min(tpl.day, daysInMonth(y, m-1));
+            const dueIso = new Date(y, m-1, day, 12, 0, 0).toISOString();
+            newPayments.push({ id: Date.now() + Math.random(), title: tpl.title, amount: tpl.amount, dueDateIso: dueIso, paid: false, notes: tpl.notes || '', category: tpl.category || 'outros', templateId: tpl.id, createdFromTemplateAt: new Date().toISOString(), paidAtIso: null });
+            added++;
+          }
+        });
+        if (added > 0) setPayments(newPayments);
+      }, [selectedMonthKey, templatesFixed]);
+
+      const preparePDFData = () => {
+        const pays = getFilteredPaymentsForMonth(selectedMonthKey);
+        const ents = getEntriesForMonth(selectedMonthKey);
+        const resvs = reservations;
+        const totalEntries = ents.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+        const totalExpenses = pays.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const paidPayments = pays.filter(p => p.paid);
+        const pendingPayments = pays.filter(p => !p.paid);
+        const categoryTotals = {};
+        CATEGORIES.forEach(cat => { categoryTotals[cat.id] = pays.filter(p => p.category === cat.id).reduce((sum, p) => sum + Number(p.amount || 0), 0); });
+        const categoriesData = CATEGORIES.map(cat => ({ label: cat.name, value: categoryTotals[cat.id], color: cat.color })).filter(d => d.value > 0);
+        const cardTotals = getCardTotals();
+        const creditCardsData = creditCards.filter(card => card.active).map(card => { const totals = cardTotals[card.id] || { currentMonth: 0, future: 0, totalActiveDebt: 0 }; return { name: card.name, dueDay: card.dueDay, currentMonth: totals.currentMonth, future: totals.future, totalActiveDebt: totals.totalActiveDebt }; });
+        const installmentsData = creditCardPurchases.filter(p => p.installments.some(inst => !inst.paid)).map(purchase => { const card = creditCards.find(c => c.id === purchase.cardId); const paidCount = purchase.installments.filter(inst => inst.paid).length; const remainingAmount = purchase.installments.filter(inst => !inst.paid).reduce((sum, inst) => sum + inst.amount, 0); return { title: purchase.title, cardName: card ? card.name : 'Cartão Desconhecido', totalInstallments: purchase.installmentCount, paidCount, remainingAmount, startMonth: formatMonthKey(purchase.firstDueMonth) }; });
+        const accountsData = accounts.map(account => ({ name: account.name, balance: account.monthlyBalances?.[selectedMonthKey] || 0 }));
+        const entriesData = ents.map(entry => ({ name: entry.name, amount: entry.amount, date: formatDateDisplay(entry.date), receivedBy: entry.receivedBy || '' }));
+        const reservationsData = resvs.map(reservation => ({ name: reservation.name, amount: reservation.amount, date: formatDateDisplay(reservation.date) }));
+        return { period: formatMonthKey(selectedMonthKey), generatedDate: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), summary: { totalEntries, totalExpenses, monthBalance: totalEntries - totalExpenses, paidCount: paidPayments.length, totalCount: pays.length, paidAmount: paidPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0), pendingAmount: pendingPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0) }, categories: categoriesData, payments: pays.map(p => ({ title: p.title, amount: p.amount, date: formatDateDisplay(p.dueDateIso), paid: p.paid, category: CATEGORIES.find(c => c.id === p.category)?.name || p.category })), creditCards: creditCardsData, installments: installmentsData, accounts: accountsData, entries: entriesData, reservations: reservationsData };
+      };
+
+      const handleGeneratePDF = (options) => { const data = preparePDFData(); setPdfData(data); setPdfOptions(options); setShowPDFConfig(false); setShowPDFPreview(true); };
+      const handleDownloadPDF = () => { generatePDF(pdfData, pdfOptions); setShowPDFPreview(false); notify('PDF gerado com sucesso!'); };
+      const toggleSection = (section) => setSectionVisibility(prev => ({ ...prev, [section]: !prev[section] }));
+      const toggleCardGroup = (cardId) => setExpandedCardGroups(prev => ({ ...prev, [cardId]: !prev[cardId] }));
+
+      const generateInstallments = (purchaseData, card) => {
+        const installments = [];
+        const installmentAmount = purchaseData.totalAmount / purchaseData.installmentCount;
+        const [startYear, startMonth] = purchaseData.firstDueMonth.split('-').map(Number);
+        for (let i = 0; i < purchaseData.installmentCount; i++) {
+          const monthOffset = i;
+          const date = new Date(startYear, startMonth - 1 + monthOffset, 1);
+          const year = date.getFullYear();
+          const month = date.getMonth() + 1;
+          const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+          const currentDate = new Date();
+          const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}`;
+          if (monthKey >= currentMonthKey) {
+            installments.push({ monthKey, amount: installmentAmount, paid: false, dueDay: card.dueDay, createdAt: new Date().toISOString() });
+          }
+        }
+        return installments;
+      };
+
+      const addCreditCard = () => {
+        if (!formCreditCard.name.trim()) { notify('Informe o nome do cartão', 'error'); return; }
+        if (!formCreditCard.dueDay || formCreditCard.dueDay < 1 || formCreditCard.dueDay > 31) { notify('Informe um dia válido', 'error'); return; }
+        const newCard = { id: Date.now() + Math.floor(Math.random() * 1000), name: formCreditCard.name.trim(), dueDay: Number(formCreditCard.dueDay), color: formCreditCard.color, active: true };
+        setCreditCards(prev => [...prev, newCard]);
+        setFormCreditCard({ name: '', dueDay: '', color: CARD_COLORS[0] });
+        setShowAddCreditCard(false);
+        notify('Cartão adicionado!');
+      };
+
+      const updateCreditCard = () => {
+        if (!editingCreditCard) return;
+        if (!formCreditCard.name.trim()) { notify('Informe o nome', 'error'); return; }
+        setCreditCards(prev => prev.map(card => card.id === editingCreditCard.id ? { ...card, name: formCreditCard.name.trim(), dueDay: Number(formCreditCard.dueDay), color: formCreditCard.color } : card));
+        setEditingCreditCard(null);
+        setFormCreditCard({ name: '', dueDay: '', color: CARD_COLORS[0] });
+        setShowAddCreditCard(false);
+        notify('Cartão atualizado!');
+      };
+
+      const deleteCreditCard = (cardId) => {
+        if (!confirm('Excluir este cartão? Todas as compras parceladas vinculadas também serão excluídas.')) return;
+        setCreditCards(prev => prev.filter(card => card.id !== cardId));
+        const purchasesToDelete = creditCardPurchases.filter(p => p.cardId === cardId);
+        purchasesToDelete.forEach(purchase => { setPayments(prev => prev.filter(p => p.creditPurchaseId !== purchase.id)); });
+        setCreditCardPurchases(prev => prev.filter(p => p.cardId !== cardId));
+        notify('Cartão e compras vinculadas removidos!');
+      };
+
+      const deleteCreditPurchase = (purchaseId) => {
+        if (!confirm('Excluir esta compra parcelada? Todas as parcelas pendentes e pagas serão removidas.')) return;
+        setCreditCardPurchases(prev => prev.filter(p => p.id !== purchaseId));
+        setPayments(prev => prev.filter(p => p.creditPurchaseId !== purchaseId));
+        notify('Compra parcelada removida!');
+      };
+
+      const startEditCreditPurchase = (purchase) => {
+        setEditingCreditPurchase(purchase);
+        setFormCreditPurchase({ title: purchase.title, totalAmount: formatNumberForInput(purchase.totalAmount), installmentCount: purchase.installmentCount, firstDueMonth: purchase.firstDueMonth, cardId: String(purchase.cardId), category: purchase.category || 'cartao' });
+        setShowAddCreditPurchase(true);
+      };
+
+      const updateCreditPurchase = () => {
+        if (!editingCreditPurchase) return;
+        if (!formCreditPurchase.title.trim()) { notify('Informe a descrição', 'error'); return; }
+        const calculatedAmount = parseCurrencyInput(formCreditPurchase.totalAmount);
+        if (calculatedAmount === '' || isNaN(Number(calculatedAmount)) || Number(calculatedAmount) <= 0) { notify('Valor inválido', 'error'); return; }
+        if (!formCreditPurchase.cardId) { notify('Selecione um cartão', 'error'); return; }
+        const cardId = Number(formCreditPurchase.cardId);
+        const card = creditCards.find(c => c.id === cardId);
+        if (!card) { notify('Cartão não encontrado', 'error'); return; }
+        const totalAmount = Number(calculatedAmount);
+        const installmentCount = Number(formCreditPurchase.installmentCount);
+        setPayments(prev => prev.filter(p => {
+          if (p.creditPurchaseId !== editingCreditPurchase.id) return true;
+          const paymentMonthKey = monthKeyFromIso(p.dueDateIso);
+          const currentDate = new Date();
+          const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}`;
+          return paymentMonthKey < currentMonthKey;
+        }));
+        const installments = generateInstallments({ totalAmount, installmentCount, firstDueMonth: formCreditPurchase.firstDueMonth }, card);
+        setCreditCardPurchases(prev => prev.map(p => p.id === editingCreditPurchase.id ? { ...p, title: formCreditPurchase.title.trim(), totalAmount, installmentCount, firstDueMonth: formCreditPurchase.firstDueMonth, cardId, category: formCreditPurchase.category, installments, updatedAt: new Date().toISOString() } : p));
+        const newPayments = [];
+        installments.forEach((inst, index) => {
+          const [year, month] = inst.monthKey.split('-').map(Number);
+          const dueDate = new Date(year, month - 1, Math.min(card.dueDay, daysInMonth(year, month - 1)), 12, 0, 0);
+          newPayments.push({ id: Date.now() + Math.random(), title: `${formCreditPurchase.title.trim()} (${index + 1}/${installmentCount}) - ${card.name}`, amount: inst.amount, dueDateIso: dueDate.toISOString(), paid: inst.paid, notes: `Compra parcelada no ${card.name} (criada em ${formatMonthKey(selectedMonthKey)})`, category: formCreditPurchase.category, creditCardId: cardId, creditPurchaseId: editingCreditPurchase.id, installmentNumber: index + 1, createdAt: new Date().toISOString() });
+        });
+        setPayments(prev => [...prev, ...newPayments]);
+        setFormCreditPurchase({ title: '', totalAmount: '', installmentCount: '', firstDueMonth: selectedMonthKey, cardId: '', category: 'cartao' });
+        setEditingCreditPurchase(null);
+        setShowAddCreditPurchase(false);
+        notify('Compra atualizada! (apenas parcelas futuras)');
+      };
+
+      const addCreditPurchase = () => {
+        if (!formCreditPurchase.title.trim()) { notify('Informe a descrição', 'error'); return; }
+        const calculatedAmount = parseCurrencyInput(formCreditPurchase.totalAmount);
+        if (calculatedAmount === '' || isNaN(Number(calculatedAmount)) || Number(calculatedAmount) <= 0) { notify('Valor inválido', 'error'); return; }
+        if (!formCreditPurchase.cardId) { notify('Selecione um cartão', 'error'); return; }
+        const cardId = Number(formCreditPurchase.cardId);
+        const card = creditCards.find(c => c.id === cardId);
+        if (!card) { notify('Cartão não encontrado', 'error'); return; }
+        const totalAmount = Number(calculatedAmount);
+        const installmentCount = Number(formCreditPurchase.installmentCount);
+        const installments = generateInstallments({ totalAmount, installmentCount, firstDueMonth: formCreditPurchase.firstDueMonth }, card);
+        const newPurchase = { id: Date.now() + Math.floor(Math.random() * 1000), cardId: cardId, title: formCreditPurchase.title.trim(), totalAmount, installmentCount, firstDueMonth: formCreditPurchase.firstDueMonth, category: formCreditPurchase.category, installments, createdAt: new Date().toISOString(), createdInMonth: selectedMonthKey };
+        setCreditCardPurchases(prev => [...prev, newPurchase]);
+        const newPayments = [];
+        installments.forEach((inst, index) => {
+          const [year, month] = inst.monthKey.split('-').map(Number);
+          const dueDate = new Date(year, month - 1, Math.min(card.dueDay, daysInMonth(year, month - 1)), 12, 0, 0);
+          newPayments.push({ id: Date.now() + Math.random(), title: `${formCreditPurchase.title.trim()} (${index + 1}/${installmentCount}) - ${card.name}`, amount: inst.amount, dueDateIso: dueDate.toISOString(), paid: false, notes: `Compra parcelada no ${card.name} (criada em ${formatMonthKey(selectedMonthKey)})`, category: formCreditPurchase.category, creditCardId: cardId, creditPurchaseId: newPurchase.id, installmentNumber: index + 1, createdAt: new Date().toISOString() });
+        });
+        setPayments(prev => [...prev, ...newPayments]);
+        setFormCreditPurchase({ title: '', totalAmount: '', installmentCount: '', firstDueMonth: selectedMonthKey, cardId: '', category: 'cartao' });
+        setShowAddCreditPurchase(false);
+        notify('Compra adicionada! (apenas parcelas futuras)');
+      };
+
+      const getCardTotals = () => {
+        const totals = {};
+        const currentMonthPayments = getFilteredPaymentsForMonth(selectedMonthKey);
+        creditCards.forEach(card => {
+          const cardPayments = currentMonthPayments.filter(p => p.creditCardId === card.id && !p.paid);
+          const currentMonthTotal = cardPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const futurePayments = payments.filter(p => p.creditCardId === card.id && !p.paid && monthKeyFromIso(p.dueDateIso) !== selectedMonthKey && new Date(p.dueDateIso) > monthFromKey(selectedMonthKey));
+          const futureTotal = futurePayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const cardPurchases = creditCardPurchases.filter(p => p.cardId === card.id);
+          let totalActiveDebt = 0;
+          cardPurchases.forEach(purchase => { totalActiveDebt += purchase.installments.reduce((sum, inst) => sum + (inst.paid ? 0 : inst.amount), 0); });
+          totals[card.id] = { currentMonth: currentMonthTotal, future: futureTotal, allPurchases: cardPurchases, totalActiveDebt };
+        });
+        return totals;
+      };
+
+      const payCreditCardBill = (cardId) => {
+        const card = creditCards.find(c => c.id === cardId);
+        if (!card) return;
+        setPayments(prev => prev.map(p => { if (p.creditCardId === cardId && monthKeyFromIso(p.dueDateIso) === selectedMonthKey && !p.paid) { return { ...p, paid: true, paidAtIso: new Date().toISOString() }; } return p; }));
+        setCreditCardPurchases(prev => prev.map(purchase => { if (purchase.cardId === cardId) { const updatedInstallments = purchase.installments.map(inst => { if (inst.monthKey === selectedMonthKey) return { ...inst, paid: true }; return inst; }); return { ...purchase, installments: updatedInstallments }; } return purchase; }));
+        calculateReminders();
+        notify(`Fatura do ${card.name} paga!`);
+      };
+
+      const groupPaymentsByCard = (paymentsList) => {
+        const cardGroups = {};
+        const nonCardPayments = [];
+        paymentsList.forEach(payment => {
+          if (payment.creditCardId) {
+            const cardId = payment.creditCardId;
+            const card = creditCards.find(c => c.id === cardId);
+            if (card) {
+              if (!cardGroups[cardId]) { cardGroups[cardId] = { cardId: cardId, cardName: card.name, dueDay: card.dueDay, color: card.color, total: 0, payments: [], allPaid: true }; }
+              cardGroups[cardId].total += Number(payment.amount || 0);
+              cardGroups[cardId].payments.push(payment);
+              if (!payment.paid) cardGroups[cardId].allPaid = false;
+            } else { nonCardPayments.push(payment); }
+          } else { nonCardPayments.push(payment); }
+        });
+        return { cardGroups: Object.values(cardGroups), nonCardPayments };
+      };
+
+      const calculateReminders = () => {
+        const out = [];
+        const currentMonthPayments = getFilteredPaymentsForMonth(selectedMonthKey);
+        const paymentsByCard = {};
+        currentMonthPayments.forEach(p => {
+          if (!p.dueDateIso || p.paid) return;
+          const diffDays = Math.ceil((new Date(p.dueDateIso).setHours(12,0,0,0) - (new Date()).setHours(12,0,0,0)) / (1000*60*60*24));
+          const paymentMonthKey = monthKeyFromIso(p.dueDateIso);
+          const currentMonthKey = selectedMonthKey;
+          if (p.creditCardId && paymentMonthKey === currentMonthKey) {
+            const cardId = p.creditCardId;
+            if (!paymentsByCard[cardId]) { const card = creditCards.find(c => c.id === cardId); paymentsByCard[cardId] = { cardId, cardName: card ? card.name : 'Cartão Desconhecido', dueDate: p.dueDateIso, diffDays, totalAmount: 0, payments: [] }; }
+            paymentsByCard[cardId].totalAmount += Number(p.amount || 0);
+            paymentsByCard[cardId].payments.push(p);
+            if (diffDays < paymentsByCard[cardId].diffDays) { paymentsByCard[cardId].diffDays = diffDays; paymentsByCard[cardId].dueDate = p.dueDateIso; }
+          } else if (!p.creditCardId) {
+            if (diffDays < 0) out.push({ type: 'overdue', p, days: diffDays });
+            else if (diffDays <= alertDaysBefore) out.push({ type: 'upcoming', p, days: diffDays });
+          }
+        });
+        Object.values(paymentsByCard).forEach(cardData => {
+          if (cardData.diffDays < 0) { out.push({ type: 'overdue', p: { title: `Fatura ${cardData.cardName}`, amount: cardData.totalAmount, isCardSummary: true, cardId: cardData.cardId }, days: cardData.diffDays }); }
+          else if (cardData.diffDays <= alertDaysBefore) { out.push({ type: 'upcoming', p: { title: `Fatura ${cardData.cardName}`, amount: cardData.totalAmount, isCardSummary: true, cardId: cardData.cardId }, days: cardData.diffDays }); }
+        });
+        setReminders(out);
+      };
+
+      const toggleCardPaid = (cardId, monthKey) => {
+        const paymentsToUpdate = payments.filter(p => p.creditCardId === cardId && monthKeyFromIso(p.dueDateIso) === monthKey);
+        if (paymentsToUpdate.length === 0) return;
+        const allPaid = paymentsToUpdate.every(p => p.paid);
+        const updatedPayments = payments.map(p => { if (p.creditCardId === cardId && monthKeyFromIso(p.dueDateIso) === monthKey) { return { ...p, paid: !allPaid, paidAtIso: !allPaid ? new Date().toISOString() : null }; } return p; });
+        setPayments(updatedPayments);
+        const updatedCreditCardPurchases = creditCardPurchases.map(purchase => { if (purchase.cardId === cardId) { const updatedInstallments = purchase.installments.map(inst => { if (inst.monthKey === monthKey) return { ...inst, paid: !allPaid }; return inst; }); return { ...purchase, installments: updatedInstallments }; } return purchase; });
+        setCreditCardPurchases(updatedCreditCardPurchases);
+        calculateReminders();
+        notify(`Fatura ${!allPaid ? 'paga' : 'pendente'}!`);
+      };
+
+      const CreditCardsSection = () => {
+        const cardTotals = getCardTotals();
+        const purchasesByCard = {};
+        creditCardPurchases.forEach(purchase => { const cardId = purchase.cardId; if (!purchasesByCard[cardId]) purchasesByCard[cardId] = []; purchasesByCard[cardId].push(purchase); });
+        const getPurchaseStats = (purchase) => {
+            const paidCount = purchase.installments.filter(inst => inst.paid).length;
+            const remainingCount = purchase.installmentCount - paidCount;
+            const paidAmount = paidCount * (purchase.totalAmount / purchase.installmentCount);
+            const remainingAmount = remainingCount * (purchase.totalAmount / purchase.installmentCount);
+            const currentMonthAmount = purchase.installments.filter(inst => inst.monthKey === selectedMonthKey).reduce((sum, inst) => sum + (inst.paid ? 0 : inst.amount), 0);
+            return { paidCount, remainingCount, paidAmount, remainingAmount, currentMonthAmount };
+        };
+        return (
+          <div className={`p-5 rounded-2xl shadow-soft mb-5 transition-colors duration-200 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center space-x-2"><CreditCardIcon /> <span>Cartões de Crédito</span></h2>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => setShowAddCreditCard(true)} className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center space-x-2 shadow-md ${darkMode ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'} text-white`}>
+                  <Plus /> <span>Cartão</span>
+                </button>
+                <button onClick={() => { setShowAddCreditPurchase(true); setEditingCreditPurchase(null); }} className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center space-x-2 shadow-md ${darkMode ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'} text-white`}>
+                  <Plus /> <span>Compra</span>
+                </button>
+                <button onClick={() => setShowCreditCards(false)} className={`px-4 py-2 rounded-xl font-medium transition-all shadow-md ${darkMode ? 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white' : 'bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-800'}`}>Voltar</button>
+              </div>
+            </div>
+            
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4 p-4 rounded-t-xl gradient-bg text-white">
+                    <div className="flex items-center">
+                        <h3 className="text-lg font-semibold">Resumo dos Cartões (Mês Atual)</h3>
+                        <button onClick={() => toggleSection('creditCardsSummary')} className="ml-2 text-white text-xl">{sectionVisibility.creditCardsSummary ? '▼' : '►'}</button>
+                    </div>
+                    <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">{creditCards.filter(card => card.active).length} cartões</span>
+                </div>
+                {sectionVisibility.creditCardsSummary && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {creditCards.filter(card => card.active).map(card => {
+                            const totals = cardTotals[card.id] || { currentMonth: 0, future: 0, totalActiveDebt: 0 };
+                            return (
+                                <div key={card.id} className={`rounded-xl border transition-all duration-200 overflow-hidden card-hover shadow-soft ${darkMode ? 'border-gray-700' : 'border-gray-200'}`} style={{ borderLeftColor: card.color, borderLeftWidth: '6px', backgroundColor: getLightColor(card.color) }}>
+                                    <div className="p-4">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <div className="flex items-center space-x-2 mb-1">
+                                                    <div className="card-color-dot" style={{ backgroundColor: card.color }}></div>
+                                                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">{card.name}</h3>
+                                                </div>
+                                                <p className="text-sm text-gray-800 dark:text-gray-200">Vence dia {card.dueDay}</p>
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <button onClick={() => payCreditCardBill(card.id)} className={`px-3 py-1 rounded text-xs font-medium ${totals.currentMonth > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300'} text-white transition`} disabled={totals.currentMonth === 0}>Pagar Fatura</button>
+                                                <button onClick={() => { setEditingCreditCard(card); setFormCreditCard({ name: card.name, dueDay: String(card.dueDay), color: card.color }); setShowAddCreditCard(true); }} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>✏️</button>
+                                                <button onClick={() => deleteCreditCard(card.id)} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}>🗑️</button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 text-gray-800 dark:text-gray-200">
+                                            <div className="flex justify-between">
+                                                <span className="opacity-90">Fatura ({formatMonthKey(selectedMonthKey)}):</span>
+                                                <span className={`font-bold ${totals.currentMonth > 0 ? 'text-red-500' : 'text-green-500'}`}>{currencyFormat(totals.currentMonth)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="opacity-90">Dívida Futura:</span>
+                                                <span className="font-medium text-amber-500">{currencyFormat(totals.future)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="opacity-90">Total Pendente:</span>
+                                                <span className="font-bold text-red-600 dark:text-red-400">{currencyFormat(totals.totalActiveDebt)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+            
+            <div>
+                <div className="flex items-center justify-between mb-4 p-4 rounded-t-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                    <div className="flex items-center">
+                        <h3 className="text-lg font-semibold">🛒 Compras Parceladas por Cartão</h3>
+                        <button onClick={() => toggleSection('creditCardsPurchases')} className="ml-2 text-white text-xl">{sectionVisibility.creditCardsPurchases ? '▼' : '►'}</button>
+                    </div>
+                    <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">{creditCardPurchases.filter(p => p.installments.some(inst => !inst.paid)).length} compras ativas</span>
+                </div>
+                {sectionVisibility.creditCardsPurchases && (
+                    <div className="space-y-6">
+                        {creditCards.filter(card => card.active).map(card => {
+                            const cardPurchases = purchasesByCard[card.id] || [];
+                            const activeCardPurchases = cardPurchases.filter(p => p.installments.some(inst => !inst.paid));
+                            if (activeCardPurchases.length === 0) return null;
+                            const isExpanded = expandedCardGroups[card.id] !== false;
+                            return (
+                                <div key={card.id} className={`rounded-xl border overflow-hidden shadow-soft ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                    <div className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer hover:opacity-90 transition-opacity" style={{ backgroundColor: `${card.color}20`, borderLeft: `6px solid ${card.color}` }} onClick={() => toggleCardGroup(card.id)}>
+                                        <div className="flex items-center space-x-3">
+                                            <div className="card-color-dot" style={{ backgroundColor: card.color }}></div>
+                                            <div className="flex items-center">
+                                                <button className="mr-2 text-sm">{isExpanded ? '▼' : '►'}</button>
+                                                <div>
+                                                    <h4 className="font-bold text-lg text-gray-800 dark:text-gray-200">{card.name}</h4>
+                                                    <p className="text-sm text-gray-800 dark:text-gray-200">{activeCardPurchases.length} compra(s) ativa(s)</p>
+                                                    <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Criadas este mês: {activeCardPurchases.filter(p => p.createdInMonth === selectedMonthKey).length}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right mt-2 sm:mt-0">
+                                            <div className="text-sm text-gray-800 dark:text-gray-200 opacity-80">Total Pendente</div>
+                                            <div className="font-bold text-red-500">{currencyFormat(activeCardPurchases.reduce((total, purchase) => { const remainingAmount = purchase.installments.filter(inst => !inst.paid).reduce((sum, inst) => sum + inst.amount, 0); return total + remainingAmount; }, 0))}</div>
+                                        </div>
+                                    </div>
+                                    {isExpanded && (
+                                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                                            {activeCardPurchases.map(purchase => {
+                                                const { paidCount, remainingCount, paidAmount, remainingAmount, currentMonthAmount } = getPurchaseStats(purchase);
+                                                const cardColor = card.color;
+                                                const lightColor = getLightColor(cardColor);
+                                                return (
+                                                    <div key={purchase.id} className={`flex flex-col md:flex-row justify-between items-start md:items-center transition-colors duration-200 ${darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'}`} style={{ backgroundColor: lightColor }}>
+                                                        <div className="flex-1 min-w-0 mb-2 md:mb-0 p-4">
+                                                            <div className="flex items-center space-x-2 mb-1">
+                                                                <div className="font-bold truncate text-gray-800 dark:text-gray-200">{purchase.title}</div>
+                                                                <span className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded-full">Criada: {purchase.createdAt ? formatDateDisplay(purchase.createdAt) : formatMonthKey(purchase.createdInMonth || selectedMonthKey)}</span>
+                                                            </div>
+                                                            <div className="text-sm text-gray-800 dark:text-gray-200 space-x-2">
+                                                                <span>{paidCount}/{purchase.installmentCount} parcelas</span>
+                                                                <span>|</span>
+                                                                <span>Início: {formatMonthKey(purchase.firstDueMonth)}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4 min-w-[280px] p-4">
+                                                            <div className="text-right">
+                                                                <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Este Mês</div>
+                                                                <div className="font-bold text-blue-500">{currencyFormat(currentMonthAmount)}</div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Falta Pagar</div>
+                                                                <div className="font-bold text-red-500">{currencyFormat(remainingAmount)}</div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="text-xs text-gray-800 dark:text-gray-200 opacity-80">Total Pago</div>
+                                                                <div className="font-medium text-green-500">{currencyFormat(paidAmount)}</div>
+                                                            </div>
+                                                            <div className="flex space-x-2">
+                                                                <button onClick={(e) => { e.stopPropagation(); startEditCreditPurchase(purchase); }} className={`p-1 rounded text-blue-500 hover:text-blue-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`} title="Editar Compra">✏️</button>
+                                                                <button onClick={(e) => { e.stopPropagation(); deleteCreditPurchase(purchase.id); }} className={`p-1 rounded text-red-500 hover:text-red-700 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`} title="Remover Compra"><XIcon /></button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {creditCards.filter(card => card.active).every(card => { const cardPurchases = purchasesByCard[card.id] || []; return cardPurchases.filter(p => p.installments.some(inst => !inst.paid)).length === 0; }) && (
+                            <p className="text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma compra parcelada ativa em nenhum cartão.</p>
+                        )}
+                    </div>
+                )}
+            </div>
+          </div>
+        );
+      };
+
+      const clearAllData = () => {
+        if (!confirm('⚠️ ATENÇÃO: Apagar TODOS os dados?')) return;
+        if (prompt('Digite "APAGAR" para confirmar:') !== 'APAGAR') return;
+        setPayments([]); setTemplatesFixed([]); setEntries([]); setReservations([]); setInstallments([]); setAccounts([]); setCategoryGoals({}); setCategoryBudgets({}); setCreditCards([]); setCreditCardPurchases([]); setAppPassword(null);
+        localStorage.clear();
+        notify('Dados e senha apagados!', 'success');
+      };
+
+      const addAccount = () => {
+        if (!formAccount.name.trim()) { notify('Informe o nome','error'); return; }
+        const calculatedBalance = parseCurrencyInput(formAccount.balance);
+        if (calculatedBalance === '' || isNaN(Number(calculatedBalance))) { notify('Valor inválido','error'); return; }
+        const newAccount = { id: Date.now() + Math.random(), name: formAccount.name.trim(), monthlyBalances: { [selectedMonthKey]: Number(calculatedBalance) } };
+        setAccounts(prev => [...prev, newAccount]);
+        setFormAccount({ name:'', balance:'' });
+        setShowAddAccount(false);
+        notify('Conta adicionada.');
+      };
+
+      const startEditAccount = (a) => {
+        setEditingAccount(a);
+        const currentBalance = a.monthlyBalances && a.monthlyBalances[selectedMonthKey] !== undefined ? a.monthlyBalances[selectedMonthKey] : '';
+        setFormAccount({ name: a.name, balance: formatNumberForInput(currentBalance) });
+        setShowAddAccount(true);
+      };
+
+      const updateAccount = () => {
+        if (!editingAccount) return;
+        if (!formAccount.name.trim()) return;
+        const calculatedBalance = parseCurrencyInput(formAccount.balance);
+        setAccounts(prev => prev.map(x => x.id === editingAccount.id ? { ...x, name: formAccount.name.trim(), monthlyBalances: { ...x.monthlyBalances, [selectedMonthKey]: Number(calculatedBalance) } } : x));
+        setEditingAccount(null);
+        setFormAccount({ name:'', balance:'' });
+        setShowAddAccount(false);
+      };
+
+      const deleteAccount = (a) => { if (confirm('Excluir conta?')) setAccounts(prev => prev.filter(x => x.id !== a.id)); };
+      const accountsTotal = accounts.reduce((s,a) => s + (a.monthlyBalances && a.monthlyBalances[selectedMonthKey] !== undefined ? Number(a.monthlyBalances[selectedMonthKey]) : 0), 0);
+      const viewAccountHistory = (account) => setShowAccountHistory(account);
+
+      const copyBalanceFromPreviousMonth = (account) => {
+        const months = getAccountMonths(account);
+        if (months.length === 0) return;
+        const currentDate = monthFromKey(selectedMonthKey);
+        const previousDate = new Date(currentDate);
+        previousDate.setMonth(previousDate.getMonth() - 1);
+        const previousKey = `${previousDate.getFullYear()}-${String(previousDate.getMonth()+1).padStart(2,'0')}`;
+        const previousBalance = account.monthlyBalances[previousKey];
+        if (previousBalance === undefined) { notify(`Sem saldo anterior`, 'error'); return; }
+        setAccounts(prev => prev.map(a => a.id === account.id ? { ...a, monthlyBalances: { ...a.monthlyBalances, [selectedMonthKey]: previousBalance } } : a));
+        notify(`Saldo copiado!`);
+      };
+
+      const getFilteredPaymentsForMonth = (monthKey) => payments.filter(p => monthKeyFromIso(p.dueDateIso) === monthKey);
+      const getEntriesForMonth = (monthKey) => entries.filter(e => monthKeyFromIso(e.date) === monthKey);
+      const getReservationsForMonth = (monthKey) => reservations;
+      const groupByQuinzena = (list) => { const first = list.filter(p => new Date(p.dueDateIso).getDate() <= 15); const second = list.filter(p => new Date(p.dueDateIso).getDate() >= 16); return { first, second }; };
+      const groupEntriesByReceiver = (entriesList) => {
+        const grouped = {};
+        entriesList.forEach(entry => {
+          const receiver = entry.receivedBy || '';
+          if (!grouped[receiver]) { grouped[receiver] = { receiver, receiverColor: entry.receiverColor || RECEIVER_COLORS[0], total: 0, entries: [] }; }
+          grouped[receiver].total += Number(entry.amount || 0);
+          grouped[receiver].entries.push(entry);
+        });
+        return Object.values(grouped).sort((a, b) => b.total - a.total);
+      };
+
+      const totalsForMonth = (monthKey) => {
+        const pays = getFilteredPaymentsForMonth(monthKey);
+        const paidSum = pays.filter(p=>p.paid).reduce((s,p)=> s + Number(p.amount||0), 0);
+        const pendingSum = pays.filter(p=>!p.paid).reduce((s,p)=> s + Number(p.amount||0), 0);
+        const totalSum = pays.reduce((s,p)=> s + Number(p.amount||0), 0);
+        const entriesSum = getEntriesForMonth(monthKey).reduce((s,e)=> s + Number(e.amount||0), 0);
+        const reservationsSum = getReservationsForMonth(monthKey).reduce((s,r)=> s + Number(r.amount||0), 0);
+        const saldo = entriesSum - paidSum;
+        return { paidSum, pendingSum, totalSum, entriesSum, reservationsSum, saldo };
+      };
+
+      const getCategoryData = () => {
+        const pays = getFilteredPaymentsForMonth(selectedMonthKey);
+        const categoryTotals = {};
+        CATEGORIES.forEach(cat => { categoryTotals[cat.id] = pays.filter(p => p.category === cat.id).reduce((sum, p) => sum + Number(p.amount || 0), 0); });
+        return CATEGORIES.map(cat => ({ label: cat.name, value: categoryTotals[cat.id], color: cat.color })).filter(d => d.value > 0);
+      };
+
+      const getComparisonData = () => {
+        const months = [];
+        const currentDate = monthFromKey(selectedMonthKey);
+        for (let i = 2; i >= 0; i--) {
+          const d = new Date(currentDate);
+          d.setMonth(d.getMonth() - i);
+          const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+          const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+          months.push({ key, label: monthNames[d.getMonth()], entries: getEntriesForMonth(key).reduce((s,e)=> s + Number(e.amount||0), 0), expenses: getFilteredPaymentsForMonth(key).reduce((s,p)=> s + Number(p.amount||0), 0) });
+        }
+        return { labels: months.map(m => m.label), entries: months.map(m => m.entries), expenses: months.map(m => m.expenses) };
+      };
+
+      const getFeaturedCategoriesTotal = () => {
+        const pays = getFilteredPaymentsForMonth(selectedMonthKey);
+        const featured = {};
+        CATEGORIES.filter(cat => cat.featured).forEach(cat => { featured[cat.id] = { name: cat.name, color: cat.color, bgColor: cat.bgColor, darkBgColor: cat.darkBgColor, total: pays.filter(p => p.category === cat.id).reduce((sum, p) => sum + Number(p.amount || 0), 0) }; });
+        return featured;
+      };
+
+      const setBudgetForCategory = (categoryId, amount) => { if (amount && Number(amount) > 0) setCategoryBudgets(prev => ({...prev, [categoryId]: Number(amount)})); else setCategoryBudgets(prev => { const n = {...prev}; delete n[categoryId]; return n; }); };
+
+      const getCategoryBudgetProgress = () => {
+        const pays = getFilteredPaymentsForMonth(selectedMonthKey);
+        const progress = {};
+        Object.keys(categoryBudgets).forEach(catId => {
+          const spent = pays.filter(p => p.category === catId).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+          const budget = categoryBudgets[catId];
+          const percentage = budget > 0 ? (spent / budget) * 100 : 0;
+          const cat = CATEGORIES.find(c => c.id === catId);
+          progress[catId] = { name: cat?.name || catId, spent, budget, percentage: Math.min(percentage, 100), overBudget: spent > budget };
+        });
+        return progress;
+      };
+
+      const getDashboardMetrics = () => {
+        const current = totalsForMonth(selectedMonthKey);
+        const currentDate = monthFromKey(selectedMonthKey);
+        const last3Months = [];
+        for (let i = 2; i >= 0; i--) {
+          const d = new Date(currentDate);
+          d.setMonth(d.getMonth() - i);
+          const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+          last3Months.push(totalsForMonth(key));
+        }
+        const avgExpenses = last3Months.reduce((sum, m) => sum + m.totalSum, 0) / 3;
+        const avgEntries = last3Months.reduce((sum, m) => sum + m.entriesSum, 0) / 3;
+        const savings = last3Months.map(m => m.entriesSum - m.paidSum);
+        return { currentSaldo: current.entriesSum - current.paidSum, currentSavings: current.entriesSum - current.paidSum, avgExpenses, avgEntries };
+      };
+
+      const getQuickStats = () => {
+        const pays = getFilteredPaymentsForMonth(selectedMonthKey);
+        const mP = pays.filter(p => p.category === 'mercantil' && p.paid);
+        const lP = pays.filter(p => p.category === 'lanches' && p.paid);
+        const mT = mP.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const lT = lP.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        return { mercantil: { total: mT, count: mP.length, average: mP.length > 0 ? mT/mP.length : 0 }, lanches: { total: lT, count: lP.length, average: lP.length > 0 ? lT/lP.length : 0 } };
+      };
+
+      useEffect(() => { calculateReminders(); const t = setInterval(calculateReminders, 60*1000); return () => clearInterval(t); }, [selectedMonthKey, alertDaysBefore, creditCards, payments]);
+
+      const togglePaid = (p) => {
+        const updatedPayments = payments.map(x => { if (x.id === p.id) { return { ...x, paid: !x.paid, paidAtIso: !x.paid ? new Date().toISOString() : null }; } return x; });
+        setPayments(updatedPayments);
+        calculateReminders();
+      };
+
+      const notify = (text, type='success') => { setNotification({ show:true, text, type }); setTimeout(()=> setNotification({ show:false, text:'', type:'success' }), 3500); };
+
+      const addEntry = () => {
+        if (!formEntry.name.trim()) return;
+        const calculatedAmount = parseCurrencyInput(formEntry.amount);
+        setEntries(prev => [...prev, { id: Date.now()+Math.random(), name: formEntry.name.trim(), amount: Number(calculatedAmount), date: isoFromDateInput(formEntry.date), notes: formEntry.notes || '', receivedBy: formEntry.receivedBy.trim(), receiverColor: formEntry.receiverColor }]);
+        setFormEntry({ name:'', amount:'', date:'', notes:'', receivedBy: '', receiverColor: RECEIVER_COLORS[0] }); 
+        setShowAddEntry(false);
+      };
+
+      const startEditEntry = (e) => { setEditingEntry(e); setFormEntry({ name: e.name, amount: formatNumberForInput(e.amount), date: new Date(e.date).toISOString().slice(0,10), notes: e.notes || '', receivedBy: e.receivedBy || '', receiverColor: e.receiverColor || RECEIVER_COLORS[0] }); setShowAddEntry(true); };
+      const updateEntry = () => { if(!editingEntry) return; const c = parseCurrencyInput(formEntry.amount); setEntries(prev => prev.map(x => x.id === editingEntry.id ? { ...x, name: formEntry.name.trim(), amount: Number(c), date: isoFromDateInput(formEntry.date), notes: formEntry.notes||'', receivedBy: formEntry.receivedBy.trim(), receiverColor: formEntry.receiverColor } : x)); setEditingEntry(null); setFormEntry({ name:'', amount:'', date:'', notes:'', receivedBy: '', receiverColor: RECEIVER_COLORS[0] }); setShowAddEntry(false); };
+      const deleteEntry = (e) => { if(confirm('Excluir?')) setEntries(prev => prev.filter(x => x.id !== e.id)); };
+
+      const addPayment = () => {
+        if (!formPayment.title.trim()) { notify('Informe o nome da conta', 'error'); return; }
+        const calculatedAmount = parseCurrencyInput(formPayment.amount);
+        if (calculatedAmount === '' || isNaN(Number(calculatedAmount)) || Number(calculatedAmount) <= 0) { notify('Valor inválido. Ex: 50,00 ou 30+20', 'error'); return; }
+        const day = Number(formPayment.day);
+        if (isNaN(day) || day < 1 || day > 31) { notify('Dia inválido (1-31)', 'error'); return; }
+        const [y, m] = selectedMonthKey.split('-').map(Number);
+        const lastDay = daysInMonth(y, m-1);
+        const dueDay = Math.min(day, lastDay);
+        const dueIso = new Date(y, m-1, dueDay, 12, 0, 0).toISOString();
+        
+        if (formPayment.type === 'fixed') {
+          let occurrences = null;
+          let endMonthKey = null;
+          if (formPayment.occurrences && formPayment.occurrences.trim() !== '') {
+            occurrences = Number(formPayment.occurrences);
+            if (occurrences <= 0) { notify('Número de ocorrências inválido', 'error'); return; }
+          }
+          if (formPayment.endMonthKey && formPayment.endMonthKey.trim() !== '') {
+            endMonthKey = formPayment.endMonthKey;
+            if (compareMonthKeys(endMonthKey, formPayment.startMonthKey) < 0) { notify('Data de término não pode ser anterior à data de início', 'error'); return; }
+          }
+          const tpl = { id: Date.now() + Math.random(), title: formPayment.title.trim(), amount: Number(calculatedAmount), day: dueDay, notes: formPayment.notes || '', category: formPayment.category || 'outros', startMonthKey: formPayment.startMonthKey, occurrences: occurrences, endMonthKey: endMonthKey, createdAt: new Date().toISOString() };
+          setTemplatesFixed(prev => [...prev, tpl]);
+          if (shouldGenerateFixedPayment(tpl, selectedMonthKey)) {
+            setPayments(prev => [...prev, { id: Date.now() + Math.random(), title: tpl.title, amount: tpl.amount, dueDateIso: dueIso, paid: formPayment.paid, notes: tpl.notes || '', category: tpl.category, templateId: tpl.id, createdFromTemplateAt: new Date().toISOString(), paidAtIso: formPayment.paid ? new Date().toISOString() : null }]);
+          }
+        } else {
+          setPayments(prev => [...prev, { id: Date.now() + Math.random(), title: formPayment.title.trim(), amount: Number(calculatedAmount), dueDateIso: dueIso, paid: formPayment.paid, notes: formPayment.notes || '', category: formPayment.category || 'outros', templateId: null, paidAtIso: formPayment.paid ? new Date().toISOString() : null }]);
+        }
+        setFormPayment({ title: '', amount: '', day: '', type: 'variable', notes: '', category: 'outros', paid: false, calculatedResult: '', startMonthKey: selectedMonthKey, occurrences: '', endMonthKey: '' });
+        setShowAddPayment(false);
+        calculateReminders();
+        notify('Pagamento adicionado com sucesso!');
+      };
+
+      const startEditPayment = (p) => {
+        setEditingPayment(p);
+        const d = new Date(p.dueDateIso);
+        let templateData = {};
+        if (p.templateId) {
+          const template = templatesFixed.find(t => t.id === p.templateId);
+          if (template) { templateData = { startMonthKey: template.startMonthKey || selectedMonthKey, occurrences: template.occurrences || '', endMonthKey: template.endMonthKey || '' }; }
+        }
+        setFormPayment({ title: p.title, amount: formatNumberForInput(p.amount), day: String(d.getDate()), type: p.templateId ? 'fixed' : 'variable', notes: p.notes || '', category: p.category || 'outros', paid: p.paid, calculatedResult: '', ...templateData });
+        setShowAddPayment(true);
+      };
+
+      const updatePayment = () => {
+        if (!editingPayment) return;
+        const calculatedAmount = parseCurrencyInput(formPayment.amount);
+        const [y,m] = selectedMonthKey.split('-').map(Number);
+        const newDueIso = new Date(y,m-1,Math.min(Number(formPayment.day), daysInMonth(y,m-1)),12,0,0).toISOString();
+        const updatedPayments = payments.map(p => p.id === editingPayment.id ? { ...p, title: formPayment.title.trim(), amount: Number(calculatedAmount), dueDateIso: newDueIso, notes: formPayment.notes || '', category: formPayment.category || 'outros', paid: formPayment.paid, paidAtIso: formPayment.paid && !p.paid ? new Date().toISOString() : p.paidAtIso } : p);
+        setPayments(updatedPayments);
+        if (editingPayment.templateId) {
+          let occurrences = null;
+          let endMonthKey = null;
+          if (formPayment.occurrences && formPayment.occurrences.trim() !== '') { occurrences = Number(formPayment.occurrences); }
+          if (formPayment.endMonthKey && formPayment.endMonthKey.trim() !== '') { endMonthKey = formPayment.endMonthKey; }
+          setTemplatesFixed(prev => prev.map(t => t.id === editingPayment.templateId ? { ...t, title: formPayment.title.trim(), amount: Number(calculatedAmount), day: Number(formPayment.day), notes: formPayment.notes || '', category: formPayment.category || 'outros', startMonthKey: formPayment.startMonthKey, occurrences: occurrences, endMonthKey: endMonthKey, updatedAt: new Date().toISOString() } : t));
+        }
+        setEditingPayment(null); 
+        setFormPayment({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '', startMonthKey: selectedMonthKey, occurrences: '', endMonthKey: '' }); 
+        setShowAddPayment(false);
+        calculateReminders();
+        notify('Pagamento atualizado!');
+      };
+
+      const deletePayment = (p) => {
+        if (!confirm('Excluir?')) return;
+        if (p.templateId && confirm('Apagar modelo fixo também?')) {
+          setTemplatesFixed(prev => prev.filter(t => t.id !== p.templateId));
+          const updatedPayments = payments.filter(x => x.templateId !== p.templateId);
+          setPayments(updatedPayments);
+          calculateReminders();
+          return;
+        }
+        const updatedPayments = payments.filter(x => x.id !== p.id);
+        setPayments(updatedPayments);
+        calculateReminders();
+      };
+
+      const addReservation = () => {
+        const c = parseCurrencyInput(formReservation.amount);
+        setReservations(prev => [...prev, { id: Date.now()+Math.random(), name: formReservation.name.trim(), amount: Number(c), date: isoFromDateInput(formReservation.date), notes: formReservation.notes || '' }]);
+        setFormReservation({ name:'', amount:'', date:'', notes:'' }); 
+        setShowAddReservation(false);
+      };
+      
+      const startEditReservation = (r) => { setEditingReservation(r); setFormReservation({ name: r.name, amount: formatNumberForInput(r.amount), date: new Date(r.date).toISOString().slice(0,10), notes: r.notes || '' }); setShowAddReservation(true); };
+      const updateReservation = () => { if(!editingReservation) return; const c = parseCurrencyInput(formReservation.amount); setReservations(prev => prev.map(x => x.id === editingReservation.id ? {...x, name: formReservation.name.trim(), amount: Number(c), date: isoFromDateInput(formReservation.date), notes: formReservation.notes||''} : x)); setEditingReservation(null); setFormReservation({name:'',amount:'',date:'',notes:''}); setShowAddReservation(false); };
+      const deleteReservation = (r) => { if(confirm('Excluir?')) setReservations(prev => prev.filter(x => x.id !== r.id)); };
+
+      const addInstallment = () => {
+        const total = parseCurrencyInput(formInstallment.totalAmount);
+        const count = Number(formInstallment.installmentCount);
+        if (total === '' || isNaN(Number(total)) || Number(total) <= 0) { notify('Valor total inválido', 'error'); return; }
+        if (count <= 0 || count > 60) { notify('Número de parcelas inválido', 'error'); return; }
+        const amount = Number(total) / count;
+        const [y,m] = selectedMonthKey.split('-').map(Number);
+        const newI = [];
+        for (let i = 0; i < count; i++) { newI.push({ id: Date.now() + Math.random(), title: `${formInstallment.title.trim()} (${i+1}/${count})`, amount, dueDateIso: new Date(y, m-1 + i, Math.min(Number(formInstallment.firstDueDay), daysInMonth(y, m-1+i)), 12,0,0).toISOString(), paid: false, notes: formInstallment.notes || '', category: formInstallment.category || 'outros', installmentId: Date.now(), installmentIndex: i, totalInstallments: count }); }
+        setInstallments(prev=>[...prev,...newI]); 
+        setPayments(prev=>[...prev,...newI]); 
+        setFormInstallment({ title:'', totalAmount:'', installmentCount:'', firstDueDay:'', category:'outros', notes:'' }); 
+        setShowAddInstallment(false);
+        calculateReminders();
+        notify('Parcelamento adicionado!');
+      };
+
+      const exportData = () => {
+        const data = { payments, templatesFixed, entries, reservations, installments, accounts, categoryGoals, categoryBudgets, creditCards, creditCardPurchases };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `financas-backup-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); notify('Backup exportado.');
+      };
+
+      const importData = (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (data.payments) setPayments(data.payments);
+            if (data.templatesFixed) { const fixedWithStartMonth = data.templatesFixed.map(template => ({ ...template, startMonthKey: template.startMonthKey || selectedMonthKey, occurrences: template.occurrences || null, endMonthKey: template.endMonthKey || null })); setTemplatesFixed(fixedWithStartMonth); }
+            if (data.entries) { const entriesWithReceiver = data.entries.map(entry => ({ ...entry, receivedBy: entry.receivedBy || '', receiverColor: entry.receiverColor || RECEIVER_COLORS[0] })); setEntries(entriesWithReceiver); }
+            if (data.reservations) setReservations(data.reservations);
+            if (data.installments) setInstallments(data.installments);
+            if (data.accounts) setAccounts(data.accounts);
+            if (data.categoryGoals) setCategoryGoals(data.categoryGoals);
+            if (data.categoryBudgets) setCategoryBudgets(data.categoryBudgets);
+            if (data.creditCards) setCreditCards(data.creditCards);
+            if (data.creditCardPurchases) setCreditCardPurchases(data.creditCardPurchases);
+            calculateReminders();
+            notify('Dados importados.');
+          } catch (err) { notify('Erro ao importar.','error'); }
+        };
+        reader.readAsText(file); e.target.value = '';
+      };
+
+      const changeMonth = (dir) => { const [y, m] = selectedMonthKey.split('-').map(Number); const d = new Date(y, m-1 + dir, 1); setSelectedMonthKey(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); };
+
+      const filteredPayments = () => {
+        let pays = getFilteredPaymentsForMonth(selectedMonthKey);
+        if (search.trim()) { pays = pays.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || (p.notes && p.notes.toLowerCase().includes(search.toLowerCase()))); }
+        if (categoryFilter !== 'all') { pays = pays.filter(p => p.category === categoryFilter); }
+        return pays;
+      };
+
+      const getSectionColors = (section) => darkMode ? SECTION_COLORS[section].dark : SECTION_COLORS[section].light;
+      const featuredTotals = getFeaturedCategoriesTotal();
+      const categoryData = getCategoryData();
+      const comparisonData = getComparisonData();
+      const budgetProgress = getCategoryBudgetProgress();
+      const dashboardMetrics = getDashboardMetrics();
+      const totals = totalsForMonth(selectedMonthKey);
+      const quickStats = getQuickStats();
+      const entriesByReceiver = groupEntriesByReceiver(getEntriesForMonth(selectedMonthKey));
+      const formatFixedAccountInfo = (template) => {
+        let info = `Início: ${formatMonthKey(template.startMonthKey)}`;
+        if (template.occurrences) info += ` | ${template.occurrences}x`;
+        if (template.endMonthKey) info += ` | Até: ${formatMonthKey(template.endMonthKey)}`;
+        return info;
+      };
+      
+      if (!isAuthenticated) { return <LoginScreen onLogin={handleLogin} darkMode={darkMode} hasPassword={!!appPassword} />; }
+
+      return (
+        <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark' : ''}`} style={{ background: 'var(--surface-2)', color: 'var(--text-primary)' }}>
+          <header className="app-header sticky top-0 z-10 transition-colors duration-200">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-800 text-white tracking-tight" style={{fontWeight:800, color:'#fff', letterSpacing:'-0.02em'}}>💰 Finanças 2026</h1>
+                <div className="month-nav">
+                  <button onClick={() => changeMonth(-1)}><Left /></button>
+                  <span>{new Date(monthFromKey(selectedMonthKey)).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+                  <button onClick={() => changeMonth(1)}><Right /></button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                <button onClick={() => setShowCreditCards(!showCreditCards)} className="header-action" title="Cartões"><CreditCardIcon /></button>
+                <button onClick={() => setShowPDFConfig(true)} className="header-action" title="Gerar PDF"><PDFIcon /></button>
+                <button onClick={() => setShowPasswordModal(true)} className="header-action" title="Senha">{appPassword ? <Lock /> : <Unlock />}</button>
+                <button onClick={() => setDarkMode(!darkMode)} className="header-action">{darkMode ? <Sun /> : <Moon />}</button>
+                <button onClick={() => setShowDashboard(!showDashboard)} className="header-action"><DashboardIcon /></button>
+                <button onClick={() => setShowAnalytics(!showAnalytics)} className="header-action"><ChartIcon /></button>
+                <button onClick={exportData} className="header-action" title="Exportar"><Download /></button>
+                <label className="header-action cursor-pointer" style={{display:'flex',alignItems:'center'}}><Upload /><input type="file" accept=".json" onChange={importData} className="hidden" /></label>
+                <button onClick={clearAllData} className="header-action" title="Apagar tudo">🗑️</button>
+              </div>
+            </div>
+          </header>
+
+          {showCreditCards && <CreditCardsSection />}
+
+          {!showCreditCards && (
+            <main className="max-w-7xl mx-auto px-4 py-5">
+              {showDashboard && (
+                <div className={`p-5 rounded-2xl shadow-soft mb-5 transition-colors duration-200 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">📊 Dashboard</h2>
+                    <button onClick={() => setShowBudgetManager(!showBudgetManager)} className={`px-4 py-2 rounded-xl font-medium transition-all shadow-md ${darkMode ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'} text-white`}>{showBudgetManager ? 'Voltar' : 'Orçamentos'}</button>
+                  </div>
+                  {showBudgetManager ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {CATEGORIES.map(cat => (
+                        <div key={cat.id} className={`p-4 rounded-xl border transition-colors duration-200 shadow-soft ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                          <div className="flex items-center justify-between mb-3"><span className="font-medium">{cat.name}</span><span style={{ color: cat.color }}>●</span></div>
+                          <input type="number" placeholder="Orçamento mensal" value={categoryBudgets[cat.id] || ''} onChange={(e) => setBudgetForCategory(cat.id, e.target.value)} className={`w-full px-3 py-2 rounded-xl border transition-colors duration-200 focus:ring-2 focus:ring-blue-500 ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                        <div className={`p-4 rounded-2xl border shadow-soft ${darkMode ? 'border-gray-700 bg-gray-700' : 'border-gray-100 bg-gray-50'}`}><div className="stat-label" style={{color:'var(--text-secondary)'}}>Saldo Atual</div><div className={`stat-value ${dashboardMetrics.currentSaldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(dashboardMetrics.currentSaldo)}</div></div>
+                        <div className={`p-4 rounded-2xl border shadow-soft ${darkMode ? 'border-gray-700 bg-gray-700' : 'border-gray-100 bg-gray-50'}`}><div className="stat-label" style={{color:'var(--text-secondary)'}}>Economia Mês</div><div className={`stat-value ${dashboardMetrics.currentSavings >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(dashboardMetrics.currentSavings)}</div></div>
+                        <div className={`p-4 rounded-2xl border shadow-soft ${darkMode ? 'border-gray-700 bg-gray-700' : 'border-gray-100 bg-gray-50'}`}><div className="stat-label" style={{color:'var(--text-secondary)'}}>Média Despesas</div><div className="stat-value text-orange-500">{currencyFormat(dashboardMetrics.avgExpenses)}</div></div>
+                        <div className={`p-4 rounded-2xl border shadow-soft ${darkMode ? 'border-gray-700 bg-gray-700' : 'border-gray-100 bg-gray-50'}`}><div className="stat-label" style={{color:'var(--text-secondary)'}}>Média Entradas</div><div className="stat-value text-blue-500">{currencyFormat(dashboardMetrics.avgEntries)}</div></div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className={`p-4 rounded-xl border shadow-soft ${darkMode ? 'border-emerald-700 bg-emerald-900/20' : 'border-emerald-200 bg-emerald-50'}`}><h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-3">🛒 Mercantil (Este Mês)</h3><div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400"><span>Total:</span><span>{currencyFormat(quickStats.mercantil.total)}</span></div></div>
+                        <div className={`p-4 rounded-xl border shadow-soft ${darkMode ? 'border-amber-700 bg-amber-900/20' : 'border-amber-200 bg-amber-50'}`}><h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-3">🍕 Lanches (Este Mês)</h3><div className="flex justify-between font-bold text-amber-600 dark:text-amber-400"><span>Total:</span><span>{currencyFormat(quickStats.lanches.total)}</span></div></div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {showAnalytics && (
+                <div className={`p-5 rounded-2xl shadow-soft mb-5 transition-colors duration-200 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">📈 Análises</h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className={`p-4 rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}><PieChart data={categoryData} title="Despesas por Categoria" /></div>
+                    <div className={`p-4 rounded-xl border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}><BarChart data={comparisonData} title="Comparativo Mensal" /></div>
+                  </div>
+                </div>
+              )}
+
+              {reminders.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  {reminders.map((rem, idx) => (
+                    <div key={idx} className={`p-4 rounded-xl border shadow-soft ${rem.type === 'overdue' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'}`}>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                          <span className="font-medium">{rem.p.title}</span>
+                          <span className="text-sm ml-2">{rem.type === 'overdue' ? `Atrasado ${Math.abs(rem.days)} dia(s)` : `Vence em ${rem.days} dia(s)`}</span>
+                          {rem.p.isCardSummary && (<div className="text-xs text-gray-600 dark:text-gray-300 mt-1">Valor total da fatura</div>)}
+                        </div>
+                        <span className="font-bold text-red-600 dark:text-red-400">{currencyFormat(rem.p.amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                <div className="stat-card shadow-soft" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}><div className="stat-label text-white">Total Despesas</div><div className="stat-value text-white">{currencyFormat(totals.totalSum)}</div></div>
+                <div className="stat-card shadow-soft" style={{background:'linear-gradient(135deg,#10b981,#059669)'}}><div className="stat-label text-white">Pago</div><div className="stat-value text-white">{currencyFormat(totals.paidSum)}</div></div>
+                <div className="stat-card shadow-soft" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}><div className="stat-label text-white">Pendente</div><div className="stat-value text-white">{currencyFormat(totals.pendingSum)}</div></div>
+                <div className="stat-card shadow-soft" style={{background:'linear-gradient(135deg,#3b82f6,#2563eb)'}}><div className="stat-label text-white">Entradas</div><div className="stat-value text-white">{currencyFormat(totals.entriesSum)}</div></div>
+                <div className="stat-card shadow-soft" style={{background: totals.saldo >= 0 ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'linear-gradient(135deg,#dc2626,#b91c1c)'}}><div className="stat-label text-white">Saldo</div><div className="stat-value text-white">{currencyFormat(totals.saldo)}</div></div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                {CATEGORIES.filter(cat => cat.featured).map(cat => (
+                  <div key={cat.id} className={`p-3 rounded-2xl text-white shadow-md card-hover ${darkMode ? cat.darkBgColor : cat.bgColor}`} style={{background:`linear-gradient(135deg,${cat.color},${cat.color}cc)`}}>
+                    <div className="text-xs font-700 uppercase tracking-wider opacity-80">{cat.name}</div>
+                    <div className="text-xl font-bold mt-1" style={{fontFamily:"'Sora',sans-serif",fontSize:'1.25rem'}}>{currencyFormat(featuredTotals[cat.id]?.total || 0)}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className={`p-5 rounded-2xl shadow-soft mb-5 border transition-colors duration-200 ${getSectionColors('contas').bg} ${getSectionColors('contas').border}`}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className={`text-lg font-700 ${getSectionColors('contas').text}`} style={{fontWeight:700}}>🏦 Contas</h2>
+                    <button onClick={() => toggleSection('accounts')} className="toggle-btn">{sectionVisibility.accounts ? '▼' : '►'}</button>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-sm font-600 currency ${accountsTotal >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`} style={{fontWeight:600}}>{currencyFormat(accountsTotal)}</span>
+                </div>
+                {sectionVisibility.accounts && (
+                  <>
+                    <div className="space-y-2">
+                      {accounts.map(a => (
+                        <div key={a.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded-xl border transition-all ${darkMode ? 'border-amber-700 hover:bg-amber-900/20' : 'border-amber-200 hover:bg-amber-100'}`}>
+                          <div className="flex items-center space-x-2"><span>{a.name}</span><button onClick={() => viewAccountHistory(a)} className="opacity-50 hover:opacity-100"><HistoryIcon /></button></div>
+                          <div className="flex items-center space-x-2 mt-2 sm:mt-0"><span className={`font-medium ${Number(a.monthlyBalances?.[selectedMonthKey]||0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>{currencyFormat(a.monthlyBalances?.[selectedMonthKey]||0)}</span><button onClick={() => startEditAccount(a)}>✏️</button><button onClick={() => deleteAccount(a)}>🗑️</button><button onClick={() => copyBalanceFromPreviousMonth(a)} title="Copiar mês anterior">📋</button></div>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => { setShowAddAccount(true); setEditingAccount(null); setFormAccount({ name:'', balance:'' }); }} className={`mt-3 w-full py-3 rounded-xl border-2 border-dashed flex items-center justify-center space-x-2 transition-all ${darkMode ? 'border-amber-600 hover:bg-amber-900/20' : 'border-amber-300 hover:bg-amber-100'}`}><Plus /><span>Adicionar Conta</span></button>
+                  </>
+                )}
+              </div>
+
+              <div className={`p-4 rounded-2xl shadow-soft mb-5 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input type="text" placeholder="🔍 Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className={`flex-1 px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'}`} />
+                  <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={`px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'}`}><option value="all">Todas as categorias</option>{CATEGORIES.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}</select>
+                  <button onClick={() => setShowFixedAccounts(!showFixedAccounts)} className={`px-5 py-2.5 rounded-xl text-sm font-600 transition-all shadow-sm ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`} style={{fontWeight:600}}>{showFixedAccounts ? 'Ocultar Fixas' : 'Ver Fixas'}</button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
+                {['first', 'second'].map((quinzena, idx) => {
+                  const pays = groupByQuinzena(filteredPayments())[quinzena];
+                  const total = pays.reduce((s,p) => s + Number(p.amount||0), 0);
+                  const section = idx === 0 ? 'quinzena1' : 'quinzena2';
+                  const colors = getSectionColors(section);
+                  return (
+                    <div key={quinzena} className={`rounded-2xl shadow-soft border overflow-hidden ${colors.bg} ${colors.border}`}>
+                      <div className={`quinzena-header ${colors.header} text-white`}>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-700 text-sm" style={{fontWeight:700}}>{idx === 0 ? '1ª Quinzena' : '2ª Quinzena'}</h3>
+                          <button onClick={() => toggleSection(section)} className="text-white opacity-70 hover:opacity-100 text-xs">{sectionVisibility[section] ? '▼' : '►'}</button>
+                        </div>
+                        <span className="font-700 currency text-sm" style={{fontWeight:700,fontFamily:"'Sora',sans-serif",fontSize:'1.1rem'}}>{currencyFormat(total)}</span>
+                      </div>
+                      {sectionVisibility[section] && (
+                        <div className="p-4 space-y-3">
+                          {(() => {
+                            const { cardGroups, nonCardPayments } = groupPaymentsByCard(pays);
+                            return (
+                              <>
+                                {cardGroups.map(group => {
+                                  const lightColor = getLightColor(group.color);
+                                  return (
+                                    <div key={group.cardId} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded-xl border transition-all ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${group.allPaid ? 'opacity-60' : ''}`} style={{ backgroundColor: lightColor, borderLeftColor: group.color, borderLeftWidth: '4px' }}>
+                                      <div className="flex items-center space-x-3">
+                                        <button onClick={() => toggleCardPaid(group.cardId, selectedMonthKey)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${group.allPaid ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>{group.allPaid && '✓'}</button>
+                                        <div>
+                                          <div className="flex items-center space-x-2">
+                                            <div className="card-color-dot" style={{ backgroundColor: group.color }}></div>
+                                            <div className="font-medium text-gray-800 dark:text-gray-200">Fatura {group.cardName}</div>
+                                          </div>
+                                          <div className="text-xs text-gray-800 dark:text-gray-200">Vence dia {group.dueDay}</div>
+                                        </div>
+                                      </div>
+                                      <span className="font-medium text-gray-800 dark:text-gray-200 mt-2 sm:mt-0">{currencyFormat(group.total)}</span>
+                                    </div>
+                                  );
+                                })}
+                                {nonCardPayments.map(p => {
+                                  const cat = CATEGORIES.find(c => c.id === p.category) || CATEGORIES.find(c => c.id === 'outros');
+                                  return (
+                                    <div key={p.id} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 rounded-xl border transition-all ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${p.paid ? 'opacity-60' : ''}`}>
+                                      <div className="flex items-center space-x-3 w-full sm:w-auto">
+                                        <button onClick={() => togglePaid(p)} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${p.paid ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>{p.paid && '✓'}</button>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-medium truncate text-gray-800 dark:text-gray-200">{p.title}</div>
+                                          <div className="text-sm opacity-70 flex items-center space-x-2">
+                                            <span className="text-gray-800 dark:text-gray-200">{formatDateDisplay(p.dueDateIso)}</span>
+                                            <span style={{ color: cat.color }}>● {cat.name}</span>
+                                          </div>
+                                          {p.notes && p.notes.trim() !== '' && (<div className="mt-1 text-xs text-gray-500 dark:text-gray-400"><span className="font-medium">Obs:</span> {p.notes}</div>)}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                                        <span className="font-medium text-gray-800 dark:text-gray-200">{currencyFormat(p.amount)}</span>
+                                        <button onClick={() => startEditPayment(p)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">✏️</button>
+                                        <button onClick={() => deletePayment(p)} className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">🗑️</button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {showFixedAccounts && sectionVisibility.fixedAccounts && (
+                <div className={`p-5 rounded-2xl shadow-soft mb-5 border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                  <h2 className="text-xl font-semibold mb-4 bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">🔄 Contas Fixas</h2>
+                  <div className="space-y-3">
+                    {templatesFixed.map(tpl => {
+                      const isActive = shouldGenerateFixedPayment(tpl, selectedMonthKey);
+                      const statusColor = isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+                      return (
+                        <div key={tpl.id} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 rounded-xl border transition-all ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">{tpl.title}</div>
+                              <span className={`px-2 py-1 rounded text-xs ${statusColor}`}>{isActive ? 'Ativa' : 'Inativa'}</span>
+                            </div>
+                            <div className="text-sm opacity-70">Dia {tpl.day} • {currencyFormat(tpl.amount)}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatFixedAccountInfo(tpl)}</div>
+                          </div>
+                          <button onClick={() => deletePayment({ templateId: tpl.id })} className="mt-2 sm:mt-0">🗑️</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className={`p-5 rounded-2xl shadow-soft mb-5 border ${getSectionColors('entradas').bg} ${getSectionColors('entradas').border}`}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className={`text-lg font-700 ${getSectionColors('entradas').text}`} style={{fontWeight:700}}>💰 Entradas</h2>
+                    <button onClick={() => toggleSection('entries')} className="toggle-btn">{sectionVisibility.entries ? '▼' : '►'}</button>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-sm font-600 currency ${darkMode ? 'bg-green-800 text-green-100' : 'bg-green-100 text-green-800'}`} style={{fontWeight:600}}>{currencyFormat(totals.entriesSum)}</span>
+                </div>
+                {sectionVisibility.entries && (
+                  <>
+                    {entriesByReceiver.length > 0 && (
+                      <div className="mb-4">
+                        <h3 className="font-medium mb-2 text-gray-800 dark:text-gray-200">Resumo por Recebedor:</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                          {entriesByReceiver.map(group => { const colorClass = darkMode ? group.receiverColor.dark : group.receiverColor.light; return (
+                            <div key={group.receiver} className={`p-2 rounded-xl border ${colorClass}`}>
+                              <div className="flex justify-between items-center"><span className="font-medium">{group.receiver || 'Sem nome'}</span><span className="font-bold">{currencyFormat(group.total)}</span></div>
+                              <div className="text-xs opacity-70">{group.entries.length} entrada(s)</div>
+                            </div>
+                          ); })}
+                        </div>
+                      </div>
+                    )}
+                    <div className="space-y-4">
+                      {entriesByReceiver.map(group => { const colorClass = darkMode ? group.receiverColor.dark : group.receiverColor.light; return (
+                        <div key={group.receiver} className={`rounded-xl border overflow-hidden shadow-soft ${colorClass}`}>
+                          <div className="p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div className="flex items-center space-x-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: group.receiverColor.color }}></div><span className="font-bold text-gray-800 dark:text-gray-200">{group.receiver || 'Sem nome'}</span><span className="text-sm opacity-70">({group.entries.length} entrada(s))</span></div>
+                            <span className="font-bold text-green-600 dark:text-green-400">{currencyFormat(group.total)}</span>
+                          </div>
+                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {group.entries.map(e => (
+                              <div key={e.id} className={`flex flex-col sm:flex-row justify-between p-3 transition-all ${darkMode ? 'hover:bg-gray-700/30' : 'hover:bg-gray-50'}`}>
+                                <div>
+                                  <div className="font-medium text-gray-800 dark:text-gray-200">{e.name}</div>
+                                  <div className="text-sm opacity-70 text-gray-800 dark:text-gray-200">{formatDateDisplay(e.date)}</div>
+                                  {e.notes && e.notes.trim() !== '' && (<div className="mt-1 text-xs text-gray-600 dark:text-gray-400"><span className="font-medium">Obs:</span> {e.notes}</div>)}
+                                </div>
+                                <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                                  <span className="text-green-500 font-medium">{currencyFormat(e.amount)}</span>
+                                  <button onClick={() => startEditEntry(e)} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>✏️</button>
+                                  <button onClick={() => deleteEntry(e)} className={`p-1 rounded ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`}>🗑️</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ); })}
+                    </div>
+                    {entriesByReceiver.length === 0 && (<p className="text-gray-500 dark:text-gray-400 text-center py-4">Nenhuma entrada registrada este mês.</p>)}
+                    <button onClick={() => { setShowAddEntry(true); setEditingEntry(null); setFormEntry({ name:'', amount:'', date:'', notes:'', receivedBy: '', receiverColor: RECEIVER_COLORS[0] }); }} className={`mt-3 w-full py-3 rounded-xl border-2 border-dashed flex justify-center space-x-2 transition-all ${darkMode ? 'border-green-600 hover:bg-green-900/20' : 'border-green-300 hover:bg-green-100'}`}><Plus /><span>Adicionar Entrada</span></button>
+                  </>
+                )}
+              </div>
+
+              <div className={`p-5 rounded-2xl shadow-soft mb-5 border ${getSectionColors('reservas').bg} ${getSectionColors('reservas').border}`}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className={`text-lg font-700 ${getSectionColors('reservas').text}`} style={{fontWeight:700}}>🎯 Reservas</h2>
+                    <button onClick={() => toggleSection('reservations')} className="toggle-btn">{sectionVisibility.reservations ? '▼' : '►'}</button>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-sm font-600 currency ${darkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'}`} style={{fontWeight:600}}>{currencyFormat(reservations.reduce((sum, r) => sum + Number(r.amount || 0), 0))}</span>
+                </div>
+                {sectionVisibility.reservations && (
+                  <>
+                    <div className="space-y-3">
+                      {reservations.map(r => (
+                        <div key={r.id} className={`flex flex-col sm:flex-row justify-between p-3 rounded-xl border transition-all ${darkMode ? 'border-blue-700' : 'border-blue-200'}`}>
+                          <div>
+                            <div className="font-medium">{r.name}</div>
+                            <div className="text-sm opacity-70">{formatDateDisplay(r.date)}</div>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                            <span className="text-blue-500">{currencyFormat(r.amount)}</span>
+                            <button onClick={() => startEditReservation(r)}>✏️</button>
+                            <button onClick={() => deleteReservation(r)}>🗑️</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => { setShowAddReservation(true); setEditingReservation(null); setFormReservation({ name:'', amount:'', date:'', notes:'' }); }} className={`mt-3 w-full py-3 rounded-xl border-2 border-dashed flex justify-center space-x-2 transition-all ${darkMode ? 'border-blue-600 hover:bg-blue-900/20' : 'border-blue-300 hover:bg-blue-100'}`}><Plus /><span>Adicionar Reserva</span></button>
+                  </>
+                )}
+              </div>
+            </main>
+          )}
+
+          {!showCreditCards && (
+            <div className="fixed bottom-6 right-6">
+              <button onClick={() => { setShowAddPayment(true); setEditingPayment(null); setFormPayment({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '', startMonthKey: selectedMonthKey, occurrences: '', endMonthKey: '' }); }} className="fab"><Plus /></button>
+            </div>
+          )}
+
+          {/* ==================== MODAIS ==================== */}
+          {showPasswordModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-sm p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`} style={{boxShadow:'0 24px 64px rgba(0,0,0,0.2)'}}>
+                <h2 className="text-lg font-700 mb-4" style={{fontWeight:700}}>{appPassword ? 'Alterar Senha' : 'Definir Senha'}</h2>
+                <div className="space-y-4">
+                  <input type="password" placeholder="Nova Senha" value={passwordForm.new} onChange={(e) => setPasswordForm(prev => ({ ...prev, new: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
+                  <input type="password" placeholder="Confirmar Senha" value={passwordForm.confirm} onChange={(e) => setPasswordForm(prev => ({ ...prev, confirm: e.target.value }))} className={`w-full px-3 py-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`} />
+                  {appPassword && <p className="text-xs text-yellow-600">Deixe em branco para remover a senha.</p>}
+                </div>
+                <div className="flex space-x-3 mt-6">
+                  <button onClick={handleSetPassword} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold transition-all shadow-md">Salvar</button>
+                  <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAddCreditCard && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">{editingCreditCard ? 'Editar Cartão' : 'Adicionar Cartão'}</h2>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Nome do Cartão (Ex: Visa Nubank)" value={formCreditCard.name} onChange={e => setFormCreditCard({ ...formCreditCard, name: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} />
+                  <input type="number" placeholder="Dia de Vencimento da Fatura" value={formCreditCard.dueDay} onChange={e => setFormCreditCard({ ...formCreditCard, dueDay: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} min="1" max="31" />
+                  <ColorPicker selectedColor={formCreditCard.color} onColorSelect={(color) => setFormCreditCard({ ...formCreditCard, color })} />
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button onClick={editingCreditCard ? updateCreditCard : addCreditCard} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold transition-all shadow-md">Salvar</button>
+                  <button onClick={() => { setShowAddCreditCard(false); setEditingCreditCard(null); setFormCreditCard({ name: '', dueDay: '', color: CARD_COLORS[0] }); }} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAddCreditPurchase && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">{editingCreditPurchase ? 'Editar Compra Parcelada' : 'Adicionar Compra Parcelada'}</h2>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Descrição da Compra" value={formCreditPurchase.title} onChange={e => setFormCreditPurchase({ ...formCreditPurchase, title: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} />
+                  <input type="text" placeholder="Valor Total da Compra" value={formCreditPurchase.totalAmount} onChange={e => setFormCreditPurchase({ ...formCreditPurchase, totalAmount: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} />
+                  <input type="number" placeholder="Número de Parcelas" value={formCreditPurchase.installmentCount} onChange={e => setFormCreditPurchase({ ...formCreditPurchase, installmentCount: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} min="1" />
+                  <select value={formCreditPurchase.cardId} onChange={e => setFormCreditPurchase({ ...formCreditPurchase, cardId: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}><option value="">Selecione o Cartão</option>{creditCards.map(card => (<option key={card.id} value={card.id}>{card.name} (Vence dia {card.dueDay})</option>))}</select>
+                  <select value={formCreditPurchase.firstDueMonth} onChange={e => setFormCreditPurchase({ ...formCreditPurchase, firstDueMonth: e.target.value })} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`}><option value={selectedMonthKey}>Mês de Início (Fatura Atual)</option></select>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button onClick={editingCreditPurchase ? updateCreditPurchase : addCreditPurchase} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold transition-all shadow-md">{editingCreditPurchase ? 'Atualizar Compra' : 'Adicionar Compra'}</button>
+                  <button onClick={() => { setShowAddCreditPurchase(false); setEditingCreditPurchase(null); setFormCreditPurchase({ title: '', totalAmount: '', installmentCount: '', firstDueMonth: selectedMonthKey, cardId: '', category: 'cartao' }); }} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showAddPayment && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">{editingPayment ? 'Editar Pagamento' : 'Adicionar Pagamento'}</h2>
+                <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+                  <input type="text" placeholder="Nome da conta" value={formPayment.title} onChange={e=>setFormPayment({...formPayment,title:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} />
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Valor (R$)</label>
+                    <input type="text" placeholder="Ex: 39,92 ou 20+19,92" value={formPayment.amount} onChange={e=>{ const newValue = e.target.value; const result = parseCurrencyInput(newValue); setFormPayment(prev => ({ ...prev, amount: newValue, calculatedResult: result !== '' ? result : '' })); }} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode ? 'bg-gray-700 border-gray-600' : ''}`} />
+                    {formPayment.calculatedResult !== '' && formPayment.calculatedResult !== undefined && !isNaN(Number(formPayment.calculatedResult)) && /[+\-*/]/.test(formPayment.amount) && (<div className={`mt-2 p-2 rounded-xl text-sm ${darkMode ? 'bg-gray-700 text-green-300' : 'bg-green-50 text-green-700'}`}><div className="flex justify-between items-center"><span>Resultado do cálculo:</span><span className="font-bold">{currencyFormat(formPayment.calculatedResult)}</span></div><div className="text-xs mt-1 opacity-70">{formPayment.amount} = {formatNumberForInput(formPayment.calculatedResult)}</div></div>)}
+                    <div className="text-xs mt-1 opacity-70">Dica: Use +, -, *, / para cálculos (ex: 100+50, 200/2, 50*3)</div>
+                  </div>
+                  <input type="number" placeholder="Dia do vencimento" value={formPayment.day} onChange={e=>setFormPayment({...formPayment,day:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} />
+                  <select value={formPayment.category} onChange={e=>setFormPayment({...formPayment,category:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}>{CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                  <div className="flex items-center space-x-4"><label className="flex items-center"><input type="radio" checked={formPayment.type==='variable'} onChange={()=>setFormPayment({...formPayment,type:'variable'})} className="mr-2" /> Variável</label><label className="flex items-center"><input type="radio" checked={formPayment.type==='fixed'} onChange={()=>setFormPayment({...formPayment,type:'fixed'})} className="mr-2" /> Fixa</label></div>
+                  {formPayment.type === 'fixed' && (
+                    <div className="space-y-3 p-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                      <h3 className="font-medium text-blue-800 dark:text-blue-200">Configurações do Calendário</h3>
+                      <div><label className="block text-sm font-medium mb-1">Mês/Ano de Início</label><MonthYearPicker value={formPayment.startMonthKey} onChange={(value) => setFormPayment({...formPayment, startMonthKey: value})} /><div className="text-xs mt-1 opacity-70">A conta só será gerada a partir deste mês</div></div>
+                      <div><label className="block text-sm font-medium mb-1">Número de Ocorrências (opcional)</label><input type="number" placeholder="Ex: 12 (para 1 ano) - deixe em branco para indefinido" value={formPayment.occurrences} onChange={e=>setFormPayment({...formPayment,occurrences:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} /><div className="text-xs mt-1 opacity-70">Quantas vezes esta conta será gerada</div></div>
+                      <div><label className="block text-sm font-medium mb-1">Mês/Ano de Término (opcional)</label><MonthYearPicker value={formPayment.endMonthKey || selectedMonthKey} onChange={(value) => setFormPayment({...formPayment, endMonthKey: value})} /><div className="text-xs mt-1 opacity-70">Último mês que a conta será gerada</div></div>
+                      <div className="text-xs p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><div className="font-medium mb-1">Como funciona:</div><ul className="list-disc pl-4 space-y-1"><li>A conta só aparecerá nos meses a partir da <strong>Data de Início</strong></li><li>Se informar <strong>Número de Ocorrências</strong>, será gerada apenas X vezes</li><li>Se informar <strong>Data de Término</strong>, será gerada até esta data</li><li>Se ambos forem informados, o que ocorrer primeiro será considerado</li></ul></div>
+                    </div>
+                  )}
+                  <div className="flex items-center space-x-4"><label className="flex items-center"><input type="radio" checked={!formPayment.paid} onChange={()=>setFormPayment({...formPayment,paid:false})} className="mr-2" /> Pendente</label><label className="flex items-center"><input type="radio" checked={formPayment.paid} onChange={()=>setFormPayment({...formPayment,paid:true})} className="mr-2" /> Pago</label></div>
+                  <div><label className="block text-sm font-medium mb-1">Observações (opcional)</label><textarea placeholder="Adicione observações sobre este pagamento..." value={formPayment.notes} onChange={e=>setFormPayment({...formPayment,notes:e.target.value})} rows="3" className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} /></div>
+                </div>
+                <div className="mt-6 flex space-x-2">
+                  <button onClick={editingPayment?updatePayment:addPayment} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold transition-all shadow-md">{editingPayment ? 'Atualizar' : 'Salvar'}</button>
+                  <button onClick={()=>{ setShowAddPayment(false); setFormPayment({ title:'', amount:'', day:'', type:'variable', notes:'', category:'outros', paid: false, calculatedResult: '', startMonthKey: selectedMonthKey, occurrences: '', endMonthKey: '' }); }} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {showAddEntry && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">{editingEntry?'Editar':'Adicionar'} Entrada</h2>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Nome da entrada" value={formEntry.name} onChange={e=>setFormEntry({...formEntry,name:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-green-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} />
+                  <input type="text" placeholder="Valor" value={formEntry.amount} onChange={e=>setFormEntry({...formEntry,amount:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-green-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} />
+                  <input type="date" value={formEntry.date} onChange={e=>setFormEntry({...formEntry,date:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-green-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} />
+                  <div><label className="block text-sm font-medium mb-1">Quem Recebeu?</label><input type="text" placeholder="Digite o nome do recebedor" value={formEntry.receivedBy} onChange={e=>setFormEntry({...formEntry,receivedBy:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-green-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} /></div>
+                  <ReceiverColorPicker selectedColor={formEntry.receiverColor} onColorSelect={(colorOption) => setFormEntry({...formEntry, receiverColor: colorOption})} />
+                  <div><label className="block text-sm font-medium mb-1">Observações (opcional)</label><textarea placeholder="Adicione observações sobre esta entrada..." value={formEntry.notes} onChange={e=>setFormEntry({...formEntry,notes:e.target.value})} rows="2" className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-green-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} /></div>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button onClick={editingEntry?updateEntry:addEntry} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold transition-all shadow-md">Salvar</button>
+                  <button onClick={()=>setShowAddEntry(false)} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {showAddReservation && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">{editingReservation?'Editar':'Adicionar'} Reserva</h2>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Nome" value={formReservation.name} onChange={e=>setFormReservation({...formReservation,name:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Valor" value={formReservation.amount} onChange={e=>setFormReservation({...formReservation,amount:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="date" value={formReservation.date} onChange={e=>setFormReservation({...formReservation,date:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-blue-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button onClick={editingReservation?updateReservation:addReservation} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold transition-all shadow-md">Salvar</button>
+                  <button onClick={()=>setShowAddReservation(false)} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {showAddAccount && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">{editingAccount?'Editar':'Adicionar'} Conta</h2>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Nome" value={formAccount.name} onChange={e=>setFormAccount({...formAccount,name:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-amber-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Saldo Mês Atual" value={formAccount.balance} onChange={e=>setFormAccount({...formAccount,balance:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-amber-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button onClick={editingAccount?updateAccount:addAccount} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold transition-all shadow-md">Salvar</button>
+                  <button onClick={()=>setShowAddAccount(false)} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {showAddInstallment && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 fade-in">
+              <div className={`w-full max-w-md p-6 rounded-3xl shadow-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                <h2 className="text-xl font-bold mb-4">Parcelamento</h2>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Nome" value={formInstallment.title} onChange={e=>setFormInstallment({...formInstallment,title:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="text" placeholder="Valor Total" value={formInstallment.totalAmount} onChange={e=>setFormInstallment({...formInstallment,totalAmount:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="number" placeholder="Qtd Parcelas" value={formInstallment.installmentCount} onChange={e=>setFormInstallment({...formInstallment,installmentCount:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <input type="number" placeholder="Dia Venc." value={formInstallment.firstDueDay} onChange={e=>setFormInstallment({...formInstallment,firstDueDay:e.target.value})} className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`}/>
+                  <div><label className="block text-sm font-medium mb-1">Observações (opcional)</label><textarea placeholder="Adicione observações sobre este parcelamento..." value={formInstallment.notes} onChange={e=>setFormInstallment({...formInstallment,notes:e.target.value})} rows="2" className={`w-full p-2 rounded-xl border focus:ring-2 focus:ring-purple-500 transition ${darkMode?'bg-gray-700 border-gray-600':''}`} /></div>
+                </div>
+                <div className="mt-4 flex space-x-2">
+                  <button onClick={addInstallment} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold transition-all shadow-md">Salvar</button>
+                  <button onClick={()=>setShowAddInstallment(false)} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold transition-all shadow-md">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showPDFConfig && (<PDFConfigModal darkMode={darkMode} onClose={() => setShowPDFConfig(false)} onGenerate={handleGeneratePDF} defaultOptions={pdfOptions} />)}
+          {showPDFPreview && pdfData && (<PDFPreviewModal data={pdfData} options={pdfOptions} darkMode={darkMode} onClose={() => setShowPDFPreview(false)} onGenerate={handleDownloadPDF} />)}
+
+          {notification.show && (<div className={`fixed top-4 right-4 px-5 py-3 rounded-2xl shadow-2xl z-50 fade-in flex items-center gap-2 text-white text-sm font-600 ${notification.type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-emerald-500 to-green-600'}`} style={{fontWeight:600}}>{notification.type === 'error' ? '❌' : '✅'} {notification.text}</div>)}
+        </div>
+      );
+    }
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
